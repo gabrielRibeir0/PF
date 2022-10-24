@@ -70,7 +70,40 @@ inits :: [a] -> [[a]]
 inits [] = [[]]
 inits l = inits (init l) ++ [l]
 
+--14)definição recursiva da função que calcula a lista dos sufixos de uma lista
+tails :: [a] -> [[a]]
+tails [] = [[]]
+tails l = l : tails (tail l)
 
+--15)função que recebe uma lista de listas e produz a lista com o primeiro elemento de cada lista
+heads :: [[a]] -> [a]
+heads [] = []
+heads (h:t) | null h = heads t
+            | otherwise = head h : heads t
+
+--16)função que recebe uma lista e conta o total de elementos (todas as listas)
+total :: [[a]] -> Int
+total [] = 0
+total (h:t) = len h + total t
+    where len [] = 0
+          len (x:xs) = 1 + len xs
+
+--17)função que recebe uma lista de triplos e produz a lista de pares com o primeiro e o terceiro elemento de cada triplo
+fun :: [(a,b,c)] -> [(a,c)]
+fun [] = []
+fun ((a,b,c):t) = (a,c) : fun t
+
+--18)função que receve uma lista de triplos e concatena as strings que estão na primeira componente dos triplos
+cola :: [(String,b,c)] -> String
+cola [] = ""
+cola ((s,b,c):t) = s ++ cola t
+
+--19)função que recebe o ano, a idade e um alista de pares com o nome e ao ano de nascimento de cada pessoa, e 
+--   devolve a lista de nomes das pessoas que nesse ano atingirão ou já ultrapassaram a idade dada
+idade :: Int -> Int -> [(String,Int)] -> [String]
+idade _ _ [] = []
+idade a i ((n,an):t) | a - an >= i = n : idade a i t
+                     | otherwise = idade a i t
 --28)
 {-rem :: Eq a => [a] -> [a] ->
 rem 
