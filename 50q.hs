@@ -104,6 +104,63 @@ idade :: Int -> Int -> [(String,Int)] -> [String]
 idade _ _ [] = []
 idade a i ((n,an):t) | a - an >= i = n : idade a i t
                      | otherwise = idade a i t
+
+--20)definição recursiva da função que dado um valor n e outro m constrói a lista [n^0,...,n^m-1]
+powerEnumFrom :: Int -> Int -> [Int]
+powerEnumFrom n 0 = []
+powerEnumFrom n m = powerEnumFrom n (m-1) ++ [n^(m-1)]
+
+--21)definição recursiva da função que dado um inteiro n >= 2 diz se n é primo.
+isPrime :: Int -> Bool
+isPrime n | n >= 2 = primo n 2
+          | otherwise = False
+
+primo :: Int -> Int -> Bool
+primo n m | m^2 > n = True
+          | mod m n == 0 = False
+          | otherwise = primo n (m+1)
+
+--22)definição recursiva da função que testa se uma lista é prefixo de outra
+isPrefixOf' :: Eq a => [a] -> [a] -> Bool
+isPrefixOf' [] _ = True
+isPrefixOf' _ [] = False
+isPrefixOf' (h:t) (x:xs) = h == x && isPrefixOf' t xs
+
+--23)definição recursiva da função que testa se uma lista é sufixo de outra
+isSuffixOf' :: Eq a => [a] -> [a] -> Bool
+isSuffixOf' [] _ = True
+isSuffixOf' _ [] = False
+isSuffixOf' s l = last s == last l && isSuffixOf' (init s) (init l) 
+-- ou isSuffixOf' l (h:t) = l == (h:t) || isSuffixOf' l t
+
+--24)definição recursiva da função que testa se os elementos de uma lista ocorrem noutra pela mesma ordem relativa
+isSubsequenceOf' :: Eq a => [a] -> [a] -> Bool
+isSubsequenceOf' [] _ = True
+isSubsequenceOf' _ [] = False
+isSubsequenceOf' (h:t) (x:xs) = h == x && isSubsequenceOf' t xs || isSubsequenceOf' (h:t) xs
+
+--25)definição recursiva da função que calcula a lista de posições em que um dado elemento ocorre numa lista
+elemIndices' :: Eq a => a -> [a] -> [Int]
+elemIndices' _ [] = []
+elemIndices' e l = contador e l 0
+
+contador :: Eq a => a -> [a] -> Int -> [Int]
+contador _ [] _ = []
+contador e (h:t) i | e == h = i : contador e t (i+1)
+                   | otherwise = contador e t (i+1)
+
+--26)definição recursiva da função que calcula uma lista com os mesmos elementos da recebida, sem repetições
+nub' :: Eq a => [a] -> [a]
+nub' [] = []
+nub' (h:t) | elem h t = nub' t
+           | otherwise = h: nub' t
+
+--27)
+
+
+
+--27) 
+
 --28)
 {-rem :: Eq a => [a] -> [a] ->
 rem 
