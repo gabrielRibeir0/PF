@@ -155,14 +155,178 @@ nub' [] = []
 nub' (h:t) | elem h t = nub' t
            | otherwise = h: nub' t
 
---27)
+--27)definição recursiva da função que retorna a lista resultante de remover (a primeira ocorrência de) um dado elemento de uma lista
+delete' :: Eq a => a -> [a] -> [a]
+delete' _ [] = []
+delete' x (h:t) | x == h = t
+                | otherwise = h : delete' x t
+
+--28)definição recursiva da função que retorna a lista resultante de remover (as primeiras ocorrências) dos elementos da segunda lista da primeira
+del :: Eq a => [a] -> [a] -> [a]
+del l [] = l
+del [] l = []
+del l (h:t) = delete' h l ++ del l t
+-- ou del l (h:t) = del (delete' h l) t
+
+--29)definição recursiva da função que retorna a lista resultante de acrescentar à primeira lista os elementos da segunda que não ocorrem na primeira
+union' :: Eq a => [a] -> [a] -> [a]
+union' l [] = l
+union' l (h:t) | h `elem` l = union' l t
+               | otherwise = union' (l ++ [h]) t
+
+--30)definição recursiva da função que retorna a lista resultante de remover da primeira lista os elementos que não pertencem à segunda
+intersect' :: Eq a => [a] -> [a] -> [a]
+intersect' [] _ = []
+intersect' (h:t) l | h `elem` l = h : intersect' t l 
+                   | otherwise = intersect' t l 
+
+--31)definição recursiva da função que dado um elemento e uma lista ordenada retorna a lista resultante de inserir ordenadamente esse elemento na lista
+insert' :: Ord a => a -> [a] -> [a]
+insert' x [] = [x]
+insert' x (h:t) | x <= h = x:h:t 
+                | otherwise = h : insert' x t 
+
+--32)definição recursiva da função que junta todas as strings da lista numa só, separando-as por um espaço
+unwords' :: [String] -> String
+unwords' [] = ""
+unwords' [s] = s 
+unwords' (h:t) = h ++ " " ++ unwords' t
+
+--33)definição recursiva da função que junta todas as strings da lista numa só, separando-as pelo caracter ’\n’
+unlines' :: [String] -> String
+unlines' [] = ""
+unlines' (h:t) = h ++ "/n" ++ unlines' t
+
+--34)definição recursiva da função que dada uma lista não vazia, retorna a posição onde se encontra o maior elemento da lista
+pMaior :: Ord a => [a] -> Int
+pMaior [x] = 0
+pMaior (h:t) | h >= (t !! x) = 0
+             | otherwise = 1 + x
+    where x = pMaior t
+
+--35)definição recursiva da função que retorna uma lista construída a partir de elementos de uma lista (o segundo argumento) atendendo a uma condição dada pelo primeiro argumento
+lookup' :: Eq a => a -> [(a,b)] -> Maybe b
+lookup' _ [] = Nothing
+lookup' x ((a,b):t) | x == a = Just b
+                    | otherwise = lookup' x t
+
+--36)função calcula o maior prefixo crescente de uma lista
+preCrescente :: Ord a => [a] -> [a]
+preCrescente [] = []
+preCrescente [x] = [x]
+preCrescente (h:s:t) | s >= h = h : preCrescente (s:t)
+                     | otherwise = [h]
+
+--37)definição recursiva da função que calcula o resultado de ordenar uma lista. Podemos usar insert
+iSort :: Ord a => [a] -> [a]
+iSort [] = []
+iSort (h:t) = insert' h (iSort t)
+
+--38)definição recursiva da função que dadas duas strings, retorna True se e só se a primeira for menor do que a segunda, segundo a ordem do dicionário
+menor :: String -> String -> Bool
+menor _ "" = False
+menor "" _ = True
+menor (h:t) (c:s) | h == c = menor t s
+                  | h < c = True
+                  | otherwise = False
+
+{-Usa-se o tipo [(a,Int)] para representar multi-conjuntos de elementos de a
+  Nestas listas não há pares cuja primeira componente coincida, nem cuja segunda componente seja menor ou igual a zero
+
+39)função que testa se um elemento pertence a um multi-conjunto-}
+elemMSet :: Eq a => a -> [(a,Int)] -> Bool
+elemMSet _ [] = False
+elemMSet e ((a,n):t) | e == a = True
+                     | otherwise = elemMSet e t
+
+--40)função que converte um multi-conjuto na lista dos seus elementos
+converteMSet :: [(a,Int)] -> [a]
+converteMSet [] = []
+converteMSet ((_,0):t) = converteMSet t
+converteMSet ((a,n):t) = a : converteMSet ((a,n-1):t) 
+
+--41)função que acrescenta um elemento a um multi-conjunto
+insereMSet :: Eq a => a -> [(a,Int)] -> [(a,Int)]
+insereMSet e [] = [(e,1)] 
+insereMSet e ((a,n):t) | e == a = ((a,n+1):t)
+                       | otherwise = (a,n) : insereMSet e t
+
+--42)função que remove um elemento a um multi-conjunto. Se o elemento não existir, devolve o original
+removeMSet :: Eq a => a -> [(a,Int)] -> [(a,Int)]
+removeMSet e [] = []
+removeMSet e ((a,n):t) | e == a = if n - 1 == 0 then t else (a,n-1):t
+                       | otherwise = (a,n) : removeMSet e t
+
+--43)função que dada uma lista ordenada por ordem crescente, calcula o multi-conjunto dos seus elementos
+constroiMSet :: Ord a => [a] -> [(a,Int)]
+constroiMSet [] = []
+constroiMSet (h:t) = constroiMSetAux h (constroiMSet t) -- resultado numa ordem diferente à do exemplo, para pôr igual podemos usar reverse ou last && init
+
+constroiMSetAux :: Ord a => a -> [(a,Int)] -> [(a,Int)]
+constroiMSetAux e [] = [(e,1)]
+constroiMSetAux e ((a,n):t) | e == a = (a,n+1):t
+                            | otherwise = (a,n) : constroiMSetAux e t
+
+--44)definição recursiva da função que divide uma lista de Either's em duas listas   ??
+partitionEithers' :: [Either a b] -> ([a],[b])
+partitionEithers' [] = ([],[])
+partitionEithers' ((Left a):t) = (a : as,bs)
+    where (as,bs) = partitionEithers' t
+partitionEithers' ((Right b):t) = (as,b : bs)
+    where (as,bs) = partitionEithers' t
+
+--45)definição recursiva da função que coleciona os elementos do tipo a de uma lista
+catMaybes' :: [Maybe a] -> [a]
+catMaybes' [] = []
+catMaybes' (Just a:t) = a : catMaybes' t
+catMaybes' (_:t) = catMaybes' t
+
+--Tipo para representar movimentos de um robot
+data Movimento = Norte | Sul | Este | Oeste
+    deriving (Show,Eq) --add Eq para poder comparar na função posicao
+
+--46)função que, dadas as posições inicial e final (coordenadas) do robot, produz uma lista de movimentos suficientes para que o robot passe de uma posição para a outra
+caminho :: (Int,Int) -> (Int,Int) -> [Movimento]
+caminho (x,y) (xf,yf) | xf > x = Este : caminho (x+1,y) (xf,yf)
+                      | xf < x = Oeste : caminho (x-1,y) (xf,yf)
+                      | yf > y = Norte : caminho (x,y+1) (xf,yf)
+                      | yf < y = Sul : caminho (x,y-1) (xf,yf)
+                      | otherwise = []
+
+--47)função que dada uma posição inicial e uma lista de movimentos (correspondentes a um percurso) verifica se o robot alguma vez volta a passar pela posição inicial ao longo do percurso
+hasLoops :: (Int,Int) -> [Movimento] -> Bool
+hasLoops _ [] = False
+hasLoops p ms = p == posicao p ms || hasLoops p (init ms) 
+
+posicao :: (Int,Int) -> [Movimento] -> (Int,Int)
+posicao p [] = p
+posicao (x, y) (m:ms) | m == Norte = posicao (x, y + 1) ms
+                      | m == Sul = posicao (x, y - 1) ms
+                      | m == Este = posicao (x + 1, y) ms
+                      | otherwise = posicao (x - 1, y) ms 
 
 
+-- tipos para representar pontos e retângulos.Os retângulos têm os lados paralelos aos eixos e são representados apenas por dois dos pontos mais afastados
+type Ponto = (Float,Float)
+data Rectangulo = Rect Ponto Ponto
 
---27) 
+--48)função que, dada uma lista com retângulos, conta quantos deles são quadrados
+contaQuadrados :: [Rectangulo] -> Int
+contaQuadrados [] = 0
+contaQuadrados ((Rect (x,y) (a,b)):t) | abs(x-a)==abs(y-b) = 1 + contaQuadrados t
+                                      | otherwise = contaQuadrados t
 
---28)
-{-rem :: Eq a => [a] -> [a] ->
-rem 
-remAux (x:xs) (y:ys) ac | x == y = remAux
-                        | otherwise = remAux xs (y:ys) x : ac -}
+--49)função que, dada uma lista com retângulos, determina a ́area total que eles ocupam
+areaTotal :: [Rectangulo] -> Float
+areaTotal [] = 0
+areaTotal ((Rect (x,y) (a,b)):t) = abs(a-x) * abs(b-y) + areaTotal t
+
+--Tipo para representar o estado de um equipamento
+data Equipamento = Bom | Razoavel | Avariado
+    deriving Show
+
+--50)função que determina a quantidade de equipamentos que não estão avariados
+naoReparar :: [Equipamento] -> Int
+naoReparar [] = 0
+naoReparar (Avariado:t) = naoReparar t
+naoReparar (_:t) = 1 + naoReparar t
