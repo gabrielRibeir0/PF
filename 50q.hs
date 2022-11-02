@@ -5,7 +5,7 @@ enumFromTo' ini fim | ini > fim = []
 
 --2) definição recursiva da função enumFromThenTo :: Int -> Int-> Int -> [Int] que constrói a lista dos números inteiros compreendidos entre dois limites espaçados de um valor constante
 enumFromThenTo' :: Int -> Int -> Int -> [Int]
-enumFromThenTo' ini esp fim | ini > fim && esp >= ini || ini < fim && esp < ini = []
+enumFromThenTo' ini esp fim | ini > fim && esp >= ini || ini < fim && esp <= ini = []
                             | otherwise = ini : enumFromThenTo' esp (2*esp - ini) fim
 
 --3) definição recursiva da função (++) :: [a] -> [a] -> [a] que concatena duas listas
