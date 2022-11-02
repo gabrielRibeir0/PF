@@ -57,7 +57,7 @@ group' :: Eq a => [a] -> [[a]]
 group' [] = []
 group' [x] = [[x]]
 group' (h:t) | elem h (head s) = (h : (head s)) : tail s 
-            | otherwise = [h] : s
+             | otherwise = [h] : s
     where s = group' t
 
 --12)definição recursiva da função concat :: [[a]] -> [a] que concatena as listas de uma lista
@@ -69,6 +69,10 @@ concat' (h:t) = h ++ concat' t
 inits :: [a] -> [[a]]
 inits [] = [[]]
 inits l = inits (init l) ++ [l]
+
+--sem recursividade (não dá para fazer no teste)
+inits' :: [a] -> [[a]]
+inits' l = [take x l | x <- [0..length l]]
 
 --14)definição recursiva da função que calcula a lista dos sufixos de uma lista
 tails :: [a] -> [[a]]
@@ -283,7 +287,7 @@ catMaybes' (_:t) = catMaybes' t
 
 --Tipo para representar movimentos de um robot
 data Movimento = Norte | Sul | Este | Oeste
-    deriving (Show,Eq) --add Eq para poder comparar na função posicao
+    deriving Show
 
 --46)função que, dadas as posições inicial e final (coordenadas) do robot, produz uma lista de movimentos suficientes para que o robot passe de uma posição para a outra
 caminho :: (Int,Int) -> (Int,Int) -> [Movimento]
@@ -300,11 +304,10 @@ hasLoops p ms = p == posicao p ms || hasLoops p (init ms)
 
 posicao :: (Int,Int) -> [Movimento] -> (Int,Int)
 posicao p [] = p
-posicao (x, y) (m:ms) | m == Norte = posicao (x, y + 1) ms
-                      | m == Sul = posicao (x, y - 1) ms
-                      | m == Este = posicao (x + 1, y) ms
-                      | otherwise = posicao (x - 1, y) ms 
-
+posicao (x,y) (Norte:ms) = posicao (x, y + 1) ms
+posicao (x,y) (Sul:ms) = posicao (x, y - 1) ms
+posicao (x,y) (Este:ms) = posicao (x + 1, y) ms
+posicao (x,y) (Oeste:ms) = posicao (x - 1, y) ms
 
 -- tipos para representar pontos e retângulos.Os retângulos têm os lados paralelos aos eixos e são representados apenas por dois dos pontos mais afastados
 type Ponto = (Float,Float)
