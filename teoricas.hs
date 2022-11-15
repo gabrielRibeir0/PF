@@ -105,3 +105,107 @@ fact n = factAc n 1
     where factAc n ac | n> 0 = factAc (n-1) (n * ac)
           factAc 0 ac = ac
 
+{-Tipos Algébricos
+Ex
+data List a = Nil | Cons a (List a)
+a lista [1,2,3] pode ser 1 : 2 : 3 : []
+com o contrutor Cons 1(Cons 2 (Cons 3 Nil))
+
+Ex data [a] = []
+            | (:) a [a]
+
+-Árvores binárias
+Uma arvore binária -> ou é vazia
+                   -> ou tem um elemento e a duas sub-estruturas que também são árvores
+
+data BTree a = Empty
+             | Node a (BTree a) (BTree a)
+                        |           |
+                        v           v
+         arvore lado esquerdo     arvore lado direito
+
+terminologia-}
+data BTree a = Empty
+             | Node a (BTree a) (BTree a)
+--contar o número de nodos que tem uma árvore
+conta :: BTree a -> Int
+conta Empty = 0
+conta (Node x e d) = 1 + conta e --nodo atual + nodos da esquerda
+                       + conta d -- + nodos da direita
+
+--somar todos os nodos de um árvore de números
+sumBT :: Num a => BTree a -> a
+sumBT Empty = 0
+sumBT (Node x e d) = x + sumBT e -- número do nodo atual + soma dos números da esquerda 
+                       + sumBT d -- + soma dos números da direita
+
+--calcular a altura de uma árvore
+altura :: BTree a -> Int
+altura Empty = 0
+altura (Node x e d) = 1 + max (altura e) (altura d) --1 (se não é vazia tem pelo menos altura 1) + maior entre altura da árvore direita e a árvore esquerda
+
+--funções map e zip para árvores binárias
+mapBT :: (a -> b) -> BTree a -> BTree b
+mapBT f Empty = Empty
+mapBT f (Node x e d) = Node (f x) (mapBT f e) (mapBT f d)
+
+zipBT :: BTree a -> BTree b -> BTree (a,b)
+zipBT (Node x e d) (Node y l r) = Node (x,y) (zipBT e l) (zipBT d r)
+zipBT _ _ = Empty
+
+{-Travessia de Arvores Binárias
+As principais estratégias para percorrer uma árvore são:-}
+
+--Travessia preorder: visita a raiz, depois a árvore esqueda e a seguir a árvore direita
+preorder :: BTree a -> [a]
+preorder Empty = []
+preorder (Node x e d) = [x] ++ preorder e ++ preorder d
+
+--Travessia inorder: visita árvore esquerda, depois a raiz e depois árvore direita
+inorder :: BTree a -> [a]
+inorder Empty = []
+inorder (Node x e d) = inorder e ++ [x] ++ inorder d
+
+--Travessia postorder: visitar árvore esquerda, depois árvore direita e por fim a raiz
+postorder :: BTree a -> [a]
+postorder Empty = []
+postorder (Node x e d) = postorder e ++ postorder d ++ [x]
+
+{-Árovres binárias de procura (ou de pesquisa)
+Uma árvore binária em que o valor de cada nodo é maior do que os nodos à sua esquerda e menor do que os nodos à sua direita 
+Verifica as seguintes condições:
+-a raiz da árvore é maior do que todos os elementos do ramo da esquerda
+-a raiz da árvore é menor do que todos os elementos do ramo da direita
+-
+O formato da árvore depende da ordem em que os elementos são inseridos
+Quanto menor a altura da árvore de procura, melhor-}
+
+--Testar se um elemento pertence a uma árvore binária de procura
+elemBT :: Ord a => a -> BTree a -> Bool
+elemBT x Empty = False
+elemBT x (Node y e d) | x == y = True           --se não fosse de procura
+                      | x < y = elemBT x e      -- otherwise = elemBT x e || elemBT x d
+                      | otherwise = elemBT x d
+
+--Inserir um elemento numa árvore binária de procura
+insereBT :: Ord a => a -> BTree a -> BTree a
+insereBT x Empty = Node x Empty Empty
+insereBT x (Node y e d) | x == y = Node y e d
+                        | x < y = Node y (insereBT x e) d
+                        | otherwise = Node y e (insereBT x d)
+
+--criar uma árvore binária de procura a partir de uma lista
+listToBT :: Ord a => [a] -> BTree a
+listToBT [] = Empty
+listToBT (x:xs) = insereBT x (listToBT xs)
+
+-- usando foldr -> listToBT l = foldr insereBT Empty l 
+{-função com acumulador
+listToBT l = listBTAc l Empty
+
+listBTAc [] ac = ac
+listBTAc (x:xs) ac = listBTAc xs (insereBT x ac)
+
+que pode ser escrita usando foldl
+listToBT l = foldl (\ac x -> insereBT x ac) Empty l 
+ou  listToBT l = foldl (flip insereBT) Empty l -}
