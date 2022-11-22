@@ -209,3 +209,84 @@ listBTAc (x:xs) ac = listBTAc xs (insereBT x ac)
 que pode ser escrita usando foldl
 listToBT l = foldl (\ac x -> insereBT x ac) Empty l 
 ou  listToBT l = foldl (flip insereBT) Empty l -}
+
+{-Árvores balanceadas
+Uma árvore binária é balenceada (ou equilibrada) se é vazia, ou se:
+- as alturas das sub-árvores esquerda e direita diferem no máximo em uma unidade
+-ambas as sub-árvores são balenceadas-}
+
+--Testar se uma árvore é balenceada
+testBal :: BTree a -> Bool
+testBal Empty = True
+testBal (Node x e d) = abs (altura e - altura d) <= 1 && testBal e && testBal d
+
+--Balencear uma árvore -> gerar uma lista ordenada com os seus elementos e depois construir a árvore a partir da lista
+balencear :: BTree a -> BTree a
+balencear t = constroi (inorder t)
+
+constroi :: [a] -> BTree a
+constroi [] = Empty
+constroi l = let n = length l
+                 (l1,x:l2) = splitAt (n `div` 2) l
+             in Node x (constroi l1) (constroi l2)
+
+--ou 
+balance :: BTree a -> BTree a
+balance t = constr (inorder t , length (inorder t))
+
+constr :: ([a],Int) -> BTree a
+constr ([],0) = Empty
+constr (l,n) = let a = n `div` 2
+                   (l1,x:l2) = splitAt a l
+                in Node x (constr (l1,a)) (constr (l1,n-a-1))
+
+
+niveis :: BTree a -> [a]
+niveis Empty = []
+niveis (Node x e d) = x: aux [e,d]
+
+aux :: [BTree a] -> [a]
+aux [] = []
+aux (Empty : t) = aux t
+aux ((Node x e d):t) = x : aux (t++[e,d])  
+
+{-Árvores irregulares (rose trees)
+Nas árvores irregulares cada nodo pode ter um número variável de descendentes.-}
+data RTree a = R a [RTree a]
+    deriving Show
+
+--Contar elementos de uma árvore irregular
+contaRT :: RTree a -> Int 
+contaRT (R x l) = 1 + sum(map contaRT l)
+
+alturaRT :: RTree a -> Int
+alturaRT (R x []) = 1
+alturaRT (R x l) = 1 + maximum(map alturaRT l)
+
+niveisRT :: RTree a -> [a]
+niveisRT t = auxRT [t]
+
+auxRT :: [RTree a] -> [a]
+auxRT [] = []
+auxRT ((R x l):t) = x : auxRT (t++l)
+
+elemRT :: Eq a => a -> RTree a -> Bool
+elemRT x (R y l) | x == y = True
+                 | otherwise = any (==True) (map (elemRT x) l)
+
+{-Leaf Trees
+Árvores binárias em que a informação está apenas nas folhas da árvore. Os nós intermediários não têm informação-}
+data LTree a = Tip a
+             | Fork (LTree a) (LTree a)
+
+--
+folhas :: LTree a -> [a]
+folhas (Tip x) = [x]
+folhas (Fork e d) = folhas e ++ folhas d
+
+folhasNivel :: LTree a -> [(a,Int)]
+folhasNivel (Tip x) = [(x,1)]
+folhasNivel (Fork e d) = map (\(x,n) -> (x,n+1)) (folhasNivel e ++ folhasNivel d)
+
+--função que reconstrói uma árvore (inversa da de cima)
+reconstroi :: [(a,Int)] -> LTree a
