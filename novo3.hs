@@ -24,7 +24,7 @@ posJogador m (x,y) (Rio v,_) = Jogador (x+v+m,y)
 --função para ver quantas casas o carro pode andar até atropelar o jogador
 --mover os obstáculos como até agora, mas no máximo o número de casas de cima. Caso seja menor é o número normal 
 maxCasas :: (Terreno,[Obstaculo]) -> Jogador -> Int
-maxCasas (Estrada 0, os) _ = 0
+maxCasas (Estrada 0, _) _ = 0
 maxCasas (Estrada v, os) (Jogador (x,y))| debaixoCarro (x,y) (Estrada v,os) = 0
                                         | otherwise = if v > 0 then 1 + maxCasas (Estrada (v-1), (last os : init os)) (Jogador (x,y))
                                                       else 1 + maxCasas (Estrada (v+1), (tail os ++ [head os])) (Jogador (x,y))
