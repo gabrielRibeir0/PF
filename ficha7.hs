@@ -26,7 +26,7 @@ infixa (Mult e1 e2) = '(' : infixa e1 ++ " * " ++ infixa e2 ++ ")"
 --c)função de conversão para strings, mas que dê "3 2 5 - +"
 posfixa :: ExpInt -> String
 posfixa (Const i) = show i
-posfixa (Simetrico e) = "(" ++ posfixa e ++ ")"
+posfixa (Simetrico e) = "(" ++ posfixa e ++ ")" 
 posfixa (Mais e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " + "
 posfixa (Menos e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " - "
 posfixa (Mult e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " * "
@@ -50,3 +50,5 @@ altura (R x []) = 1
 altura (R x l) = maximum(map altura l)
 
 --c)função que remove de uma árvore todos os elementos a partir de uma dada profundidade
+prune :: Int -> RTree a -> RTree a
+prune 
