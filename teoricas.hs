@@ -290,3 +290,50 @@ folhasNivel (Fork e d) = map (\(x,n) -> (x,n+1)) (folhasNivel e ++ folhasNivel d
 
 --função que reconstrói uma árvore (inversa da de cima)
 reconstroi :: [(a,Int)] -> LTree a
+reconstroi l = fst (recaux 1 l)
+
+recaux :: Int -> [(a,Int)] -> (LTree a, [(a,Int)])
+recaux n ((a,x):t) | n == x = (Tip a, t)
+                   | n < x = (Fork e d,l2)
+    where (e,l1) = recaux (n+1) ((a,x):t)
+          (d,l2) = recaux (n+1) l1
+
+{-Full Trees 
+Árvores binárias que têm informação nos nós intermédios e nas folhas. A informação dos nós e das folhas pode ser de tipo diferente
+-}
+data FTree a b = Leaf b
+                | No a (FTree a b) (FTree a b)
+
+--Classes
+{-
+class Eq a where
+    (==) :: a -> a -> Bool
+    (/=) :: a -> a -> Bool
+    x == y = not (x /= y)
+    x /= y = not (x == y)
+-}
+--tipo de dados para representar números naturais
+data Nat = Zero
+         | Suc Nat --não podemos usar == para comparar assim
+  --  deriving Eq    assim já
+
+--ou definir a instância
+instance Eq Nat where
+    (Suc x) == (Suc y) = x==y
+    Zero == Zero = True
+    _ == _ = False
+
+--tipo de dados para representar horas
+data Time = AM Int Int | PM Int Int | Total Int Int
+  --  deriving Eq
+--assim, PM 1 30 e Total 13 30 daria False, mas queremos True
+--então teremos de definir a instância
+
+--função para converter as horas em minutos
+minutos :: Time -> Int 
+minutos (AM h m) = 60*h + m
+minutos (PM h m) = 60*(h+12) + m
+minutos (Total h m) = 60*h + m
+
+instance Eq Time where
+--t1 == t2 = (minutos t1) == (minutos t2)
