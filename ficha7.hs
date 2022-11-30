@@ -51,4 +51,15 @@ altura (R x l) = maximum(map altura l)
 
 --c)função que remove de uma árvore todos os elementos a partir de uma dada profundidade
 prune :: Int -> RTree a -> RTree a
-prune 
+prune 0 _ = []
+prune _ [] = []
+
+--d)função que gera a árvore simátrica
+mirror :: RTree a -> RTree a
+
+--e)função que faz a travessia postorder da árvore (esquerda, direita e depois raiz)
+
+--3)tipo de dados para Leaf Trees
+data LTree a = Tip a | Fork (LTree a) (LTree a)
+
+
