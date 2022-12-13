@@ -1,3 +1,7 @@
+module Teorica where
+import System.Random
+import System.IO.Error
+
 sumTPar :: [(Int,Int)] -> Int
 sumTPar (_:_:(x,y):_) = x+y
 
@@ -337,3 +341,41 @@ minutos (Total h m) = 60*h + m
 
 instance Eq Time where
 --t1 == t2 = (minutos t1) == (minutos t2)
+
+--Monads e monad IO
+--funções e tipos não puros que envolvem interações
+--função putStr que escreve uma string
+puStr :: String -> IO ()
+puStr (x:xs) = (putChar x) >> puStr xs
+puStr [] = return ()
+
+--função getLine que lê uma string
+geLine :: IO String
+geLine = getChar >>= (\x -> if x == '\n' then return [] else getLine >>= (\xs -> return (x:xs)))
+
+--Jogo de adivinha 
+--é gerado um número aleatório entre 1 e n
+--o jogador tenta adivinhar o número e o computador responde se o número é baixo, se é alto ou se acertou, contanto o número de tentativas
+
+adivinha :: IO ()
+adivinha = do putStr "Qual o número máximo com que quer jogar?"
+              n <- getLine
+              n1 <- tryIOError (readIO n)
+              case n1 of
+                Left _ -> do putStr "Erro. Valor assumido -> 10"
+                             x <- randomRIO (1,10)
+                             y <- joga x 0
+                             putStrLn ("Acertou. Usou " ++ show y ++ " tentativas.")
+                Right r -> do x <- randomRIO (1,r)
+                              y <- joga x 0
+                              putStrLn ("Acertou. Usou " ++ show y ++ " tentativas.")
+
+joga :: Int -> Int -> IO Int
+joga x n = do putStr "Palpite: "
+              s <- getLine
+              r <- readIO s
+              if r == x
+              then return (n+1)
+              else if r > x
+                   then putStr "É alto ..." >> joga x (n+1)
+                   else putStr "É baixo ..." >> joga x (n+1)
