@@ -1,12 +1,11 @@
 module T2 where
 
 import LI
-import T1
+import T1 (obsV2, validaPassagemEntreArvores)
 
---otimizar a verificação do mapavalido (basta a parte do group) e adicionar a condição de o rio ter pelo menos um tronco
 estendeMapa :: Mapa -> Int -> Mapa
 estendeMapa (Mapa l ll) n
-    | mapaValido (Mapa l ((velocidadeAleatoria n terreno t, listaObstaculo n l terreno): ll)) = Mapa l ((velocidadeAleatoria n terreno t, listaObstaculo n l terreno): ll)
+    | obsV2 (velocidadeAleatoria n terreno t) (listaObstaculo n l terreno) && validaPassagemEntreArvores (velocidadeAleatoria n terreno t, listaObstaculo n l terreno) ll = Mapa l ((velocidadeAleatoria n terreno t, listaObstaculo n l terreno): ll)
     | otherwise = estendeMapa (Mapa l ll) (n+1)
     where terreno | null ll = Relva
                   | otherwise =  escolheTerreno n (proximosTerrenosValidos (Mapa l ll))
