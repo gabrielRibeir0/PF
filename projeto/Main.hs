@@ -11,7 +11,12 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
-data World = World Jogo
+data ModoJogo = MenuJogar   --opção 'jogar' selecionada no menu
+                | MenuSair  --opção 'sair' selecionada no menu (add mais?)
+                | Jogar     --enquanto joga
+                | Pausa     --menu de pausa     --quando o jogador decide sair do jogo
+
+type Estado = (ModoJogo, Jogo)
 
 gerarMapaInicial :: [Int]  --lista de números aleatórios
                  -> Mapa   --mapa gerado (no início vazio)
@@ -23,27 +28,36 @@ gerarMapaInicial randList m n = gerarMapaInicial (init randList) (estendeMapa m 
 mainDisplay :: Display
 mainDisplay = InWindow "Crossy Road" (1280,640) (0,0)
 
-initialWorld :: Mapa -> World
-initialWorld m = World (Jogo (Jogador (0,0)) m)
+estadoInicial :: Mapa -> Estado
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,4)) mapaInicial)
 
-drawState :: World -> Picture
-drawState = undefined
+drawOption :: String -> Picture
+drawOption option = Translate (-50) 0 $ Scale (0.5) (0.5) $ Text option
 
-event :: Event -> World -> World
-event = undefined
+drawState :: Estado -> Picture
+drawState (MenuJogar, jogo) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Sair"]
+drawState (MenuSair, jogo) = Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
 
-time :: Float -> World -> World
+event :: Event -> Estado -> Estado
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuJogar, jogo) = (MenuSair, jogo)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuJogar, jogo) = (MenuSair, jogo)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuJogar, jogo) = (Jogar, jogo)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo) = error "Fim de Jogo"
+
+time :: Float -> Estado -> Estado
 time = undefined
 
 main :: IO ()
 main = do 
   n <- randomRIO (0,100)
-  let l1 = take 5 $ randoms (mkStdGen n)
-  let mapaInicial = gerarMapaInicial l1 (Mapa 4 []) 5    --onde se define a largura e o número de linhas que o mapa tem
+  let randList = take 5 $ randoms (mkStdGen n)                 --
+  let mapaInicial = gerarMapaInicial randList (Mapa 5 []) 5    --onde se define a largura e o número de linhas que o mapa tem
   play mainDisplay
        (greyN 0.25)      --background color
        15                --fps
-       initialWorld
+       (estadoInicial mapaInicial)
        drawState
        event 
        time
