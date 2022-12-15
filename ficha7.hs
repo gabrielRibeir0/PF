@@ -18,7 +18,7 @@ calcula (Mult e1 e2) = calcula e1 * calcula e2
 --b) função infixa que infixa (Mais (Const 3) (Menos (Const 2) (Const 5))) dê "(3 + (2-5))"
 infixa :: ExpInt -> String
 infixa (Const i) = show i
-infixa (Simetrico e) = "(" ++ infixa e ++ ")"
+infixa (Simetrico e) = "-(" ++ infixa e ++ ")"
 infixa (Mais e1 e2) = '(' : infixa e1 ++ " + " ++ infixa e2 ++ ")"
 infixa (Menos e1 e2) = '(' : infixa e1 ++ " - " ++ infixa e2 ++ ")"
 infixa (Mult e1 e2) = '(' : infixa e1 ++ " * " ++ infixa e2 ++ ")"
@@ -26,7 +26,7 @@ infixa (Mult e1 e2) = '(' : infixa e1 ++ " * " ++ infixa e2 ++ ")"
 --c)função de conversão para strings, mas que dê "3 2 5 - +"
 posfixa :: ExpInt -> String
 posfixa (Const i) = show i
-posfixa (Simetrico e) = "(" ++ posfixa e ++ ")" 
+posfixa (Simetrico e) = posfixa e ++ " (-) "
 posfixa (Mais e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " + "
 posfixa (Menos e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " - "
 posfixa (Mult e1 e2) = posfixa e1 ++ " " ++ posfixa e2 ++ " * "
