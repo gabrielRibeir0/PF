@@ -97,7 +97,7 @@ event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo) = error "Fim de Jogo"
 
---movimentos no jogo
+--movimentos no jogo   (jogoTerminou aqui ?)
 event (EventKey (SpecialKey KeyEsc) Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
 event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll)) = case key of
   KeyUp -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll))
