@@ -19,8 +19,6 @@ data ModoJogo = MenuJogar   --opção 'jogar' selecionada no menu
 
 data MenuPausa = VoltarJogo | Sair
 
-type PlayerMove = Jogada
-
 type Estado = (ModoJogo, Jogo)
 
 gerarMapaInicial :: [Int]  --lista de números aleatórios
@@ -33,6 +31,7 @@ gerarMapaInicial randList m n = gerarMapaInicial (init randList) (estendeMapa m 
 mainDisplay :: Display
 mainDisplay = InWindow "Crossy Road" (640,1000) (0,0)
 
+--mapa de exemplo
 exmap :: Mapa
 exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum, Arvore])
             ,(Relva, [Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
@@ -47,22 +46,26 @@ exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum,
             ]
 
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (1,0)) exmap)
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) exmap)
 
+--estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) mapaInicial)
+
+--função dos exemplos para escrever os textos das opções
 drawOption :: String -> Picture
 drawOption option = Translate (-50) 0 $ Scale (0.5) (0.5) $ Text option
 
+--elementos do mapa (depois é para substituir por imagens)
 arvore :: Picture
-arvore = color orange (circleSolid 60)
+arvore = translate 40 50 (color orange (circleSolid 40))
 
 carro :: Picture 
-carro = color red $ polygon [(0,0),(60,0),(60,70),(0,70)]
+carro = translate 40 50 (color red (circleSolid 40))
 
 tronco :: Picture
-tronco = color black $ polygon [(0,0),(60,0),(60,70),(0,70)]
+tronco = translate 40 50 (color black (circleSolid 40))
 
 rio :: Picture
-rio = color blue $ polygon [(0,0),(640,0),(640,100),(640,100)]
+rio = color blue $ polygon [(0,0),(640,0),(640,100),(0,100)]
 
 estrada :: Picture
 estrada = color (greyN 0.75) $ polygon [(0,0),(640,0),(640,100),(0,100)]
@@ -71,35 +74,38 @@ relva :: Picture
 relva = color green $ polygon [(0,0),(640,0),(640,100),(0,100)]
 
 jogador :: Picture
-jogador = color black (circleSolid 60)
+jogador = translate 40 50 (color yellow (circleSolid 40))
+--------
 
 drawState :: Estado -> Picture
 drawState (MenuJogar, jogo) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Sair"]
 drawState (MenuSair, jogo) = Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
 drawState (Pausa VoltarJogo, jogo) = Pictures [Color blue $ drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Sair"]
 drawState (Pausa Sair, jogo) = Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawMap (-320,500) ll ++ [Translate i j jogador])
-  where i = fromIntegral x
-        j = fromIntegral y
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawLines (0,0) ll ++ [Translate i j jogador])
+  where i = fromIntegral (-240 + x*80)
+        j = fromIntegral (400 - (y*100))
 
-drawMap :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
-drawMap _  [] = []
-drawMap (x,y) ((t,os):ts) = case t of 
-  Relva -> translate 0 (fromIntegral(y*(-100))) (Pictures (relva : drawLine x (t,os))) : drawMap (x,y+1) ts
-  Rio _ -> translate 0 (fromIntegral(y*(-100))) (Pictures (rio : drawLine x (t,os))) : drawMap (x,y+1) ts
-  Estrada _ -> translate 0 (fromIntegral(y*(-100))) (Pictures (estrada : drawLine x (t,os))) : drawMap (x,y+1) ts
+--desenhar cada linha e chamar a função para os obstáculos
+drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
+drawLines _  [] = []
+drawLines (x,y) ((t,os):ts) = case t of 
+  Relva -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (relva : drawObstacles x (t,os))) : drawLines (x,y+1) ts
+  Rio _ -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (rio : drawObstacles x (t,os))) : drawLines (x,y+1) ts
+  Estrada _ -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (estrada : drawObstacles x (t,os))) : drawLines (x,y+1) ts
 
-drawLine :: Int -> (Terreno,[Obstaculo]) -> [Picture]
-drawLine _ (_,[]) = []
-drawLine x (Relva,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Relva,os)
-  Arvore -> translate (fromIntegral(x*80)) 0 arvore : drawLine (x+1) (Relva,os)
-drawLine x (Rio v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Rio v,os)
-  Tronco -> translate (fromIntegral(x*80)) 0 tronco : drawLine (x+1) (Rio v,os)
-drawLine x (Estrada v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Estrada v,os)
-  Carro -> translate (fromIntegral(x*80)) 0 carro : drawLine (x+1) (Estrada v,os)
+--desenhar os obstáculos (chamada a cada linha)
+drawObstacles :: Int -> (Terreno,[Obstaculo]) -> [Picture]
+drawObstacles _ (_,[]) = []
+drawObstacles x (Relva,o:os) = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Relva,os)
+  Arvore -> translate (fromIntegral(x*80)) 0 arvore : drawObstacles (x+1) (Relva,os)
+drawObstacles x (Rio v,o:os) = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Rio v,os)
+  Tronco -> translate (fromIntegral(x*80)) 0 tronco : drawObstacles (x+1) (Rio v,os)
+drawObstacles x (Estrada v,o:os) = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Estrada v,os)
+  Carro -> translate (fromIntegral(x*80)) 0 carro : drawObstacles (x+1) (Estrada v,os)
 
 event :: Event -> Estado -> Estado
 --menu inicial
@@ -117,6 +123,7 @@ event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll))
   KeyDown -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll))
   KeyRight -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll))
   KeyLeft -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll))
+  _ -> (Jogar, Jogo (Jogador c) (Mapa l ll))
 
 --menu de pausa
 event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo) = (Pausa Sair, jogo)
@@ -140,8 +147,8 @@ time t (m, jogo) = (m, jogo)
 main :: IO ()
 main = do 
   n <- randomRIO (0,100)
-  let randList = take 5 $ randoms (mkStdGen n)                 --
-  let mapaInicial = gerarMapaInicial randList (Mapa 5 []) 5    --onde se define a largura e o número de linhas que o mapa tem
+  let randList = take 10 $ randoms (mkStdGen n)                 --
+  let mapaInicial = gerarMapaInicial randList (Mapa 8 []) 10    --onde se define a largura e o número de linhas que o mapa tem
   play mainDisplay
        (greyN 0.25)      --background color
        15                --fps
