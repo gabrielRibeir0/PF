@@ -34,13 +34,13 @@ mainDisplay :: Display
 mainDisplay = InWindow "Crossy Road" (1280,640) (0,0)
 
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,4)) mapaInicial)
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (1,0)) (Mapa 3 ([(Relva, [Nenhum,Nenhum,Arvore])])))
 
 drawOption :: String -> Picture
 drawOption option = Translate (-50) 0 $ Scale (0.5) (0.5) $ Text option
 
 arvore :: Picture
-arvore = color green (ThickCircle 0 20)
+arvore = color orange (ThickCircle 0 20)
 
 carro :: Picture 
 carro = color red $ polygon [(0,0),(40,0),(40,40),(0,40)]
@@ -58,7 +58,7 @@ relva :: Picture
 relva = color green $ polygon [(0,0),(250,0),(250,50),(0,50)]
 
 jogador :: Picture
-jogador = color green (ThickCircle 0 40)
+jogador = color black (ThickCircle 0 40)
 
 drawState :: Estado -> Picture
 drawState (MenuJogar, jogo) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Sair"]
@@ -72,9 +72,9 @@ drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawMap (0,0) ll
 drawMap :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
 drawMap _  [] = []
 drawMap (x,y) ((t,os):ts) = case t of 
-  Relva -> translate 0 (fromIntegral(y*(-50))) (Pictures (relva : drawLine x (t,os))) : drawMap (x,y+1) ts
-  Rio _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (rio : drawLine x (t,os))) : drawMap (x,y+1) ts
-  Estrada _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (estrada : drawLine x (t,os))) : drawMap (x,y+1) ts
+  Relva -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os) ++ [relva])) : drawMap (x,y+1) ts
+  Rio _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os)++ [rio])) : drawMap (x,y+1) ts
+  Estrada _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os) ++ [estrada])) : drawMap (x,y+1) ts
 
 drawLine :: Int -> (Terreno,[Obstaculo]) -> [Picture]
 drawLine _ (_,[]) = []
@@ -98,7 +98,7 @@ event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo) = (MenuJogar, jo
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo) = error "Fim de Jogo"
 
 --movimentos no jogo   (jogoTerminou aqui ?)
-event (EventKey (SpecialKey KeyEsc) Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
+event (EventKey (SpecialKey KeySpace) Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
 event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll)) = case key of
   KeyUp -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll))
   KeyDown -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll))
