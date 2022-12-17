@@ -31,62 +31,75 @@ gerarMapaInicial _ m 0 = m
 gerarMapaInicial randList m n = gerarMapaInicial (init randList) (estendeMapa m (randList !! (n-1))) (n-1)
 
 mainDisplay :: Display
-mainDisplay = InWindow "Crossy Road" (1280,640) (0,0)
+mainDisplay = InWindow "Crossy Road" (640,1000) (0,0)
+
+exmap :: Mapa
+exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum, Arvore])
+            ,(Relva, [Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
+            ,(Estrada 1, [Nenhum, Carro, Carro, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
+            ,(Estrada 1, [Nenhum, Carro, Nenhum, Nenhum, Nenhum, Carro, Carro, Carro])
+            ,(Estrada (-1), [Nenhum, Nenhum, Nenhum, Carro, Nenhum, Nenhum, Nenhum, Nenhum])
+            ,(Relva, [Arvore, Arvore, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Arvore])
+            ,(Relva, [Arvore, Nenhum, Arvore, Nenhum, Nenhum, Nenhum, Arvore, Arvore])
+            ,(Rio 2, [Tronco, Tronco, Nenhum, Tronco, Tronco, Nenhum, Nenhum, Nenhum])
+            ,(Rio (-1), [Nenhum, Tronco, Tronco, Tronco, Nenhum, Tronco, Tronco, Tronco])
+            ,(Rio 1, [Tronco, Nenhum, Nenhum, Tronco, Nenhum, Nenhum, Tronco, Tronco])
+            ]
 
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (1,0)) (Mapa 3 ([(Relva, [Nenhum,Nenhum,Arvore])])))
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (1,0)) exmap)
 
 drawOption :: String -> Picture
 drawOption option = Translate (-50) 0 $ Scale (0.5) (0.5) $ Text option
 
 arvore :: Picture
-arvore = color orange (ThickCircle 0 20)
+arvore = color orange (circleSolid 60)
 
 carro :: Picture 
-carro = color red $ polygon [(0,0),(40,0),(40,40),(0,40)]
+carro = color red $ polygon [(0,0),(60,0),(60,70),(0,70)]
 
 tronco :: Picture
-tronco = color black $ polygon [(0,0),(40,0),(40,40),(0,40)]
+tronco = color black $ polygon [(0,0),(60,0),(60,70),(0,70)]
 
 rio :: Picture
-rio = color blue $ polygon [(0,0),(250,0),(250,50),(0,50)]
+rio = color blue $ polygon [(0,0),(640,0),(640,100),(640,100)]
 
 estrada :: Picture
-estrada = color (greyN 0.75) $ polygon [(0,0),(250,0),(250,50),(0,50)]
+estrada = color (greyN 0.75) $ polygon [(0,0),(640,0),(640,100),(0,100)]
 
 relva :: Picture
-relva = color green $ polygon [(0,0),(250,0),(250,50),(0,50)]
+relva = color green $ polygon [(0,0),(640,0),(640,100),(0,100)]
 
 jogador :: Picture
-jogador = color black (ThickCircle 0 40)
+jogador = color black (circleSolid 60)
 
 drawState :: Estado -> Picture
 drawState (MenuJogar, jogo) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Sair"]
 drawState (MenuSair, jogo) = Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
 drawState (Pausa VoltarJogo, jogo) = Pictures [Color blue $ drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Sair"]
 drawState (Pausa Sair, jogo) = Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawMap (0,0) ll ++ [Translate i j jogador])
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawMap (-320,500) ll ++ [Translate i j jogador])
   where i = fromIntegral x
         j = fromIntegral y
 
 drawMap :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
 drawMap _  [] = []
 drawMap (x,y) ((t,os):ts) = case t of 
-  Relva -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os) ++ [relva])) : drawMap (x,y+1) ts
-  Rio _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os)++ [rio])) : drawMap (x,y+1) ts
-  Estrada _ -> translate 0 (fromIntegral(y*(-50))) (Pictures (drawLine x (t,os) ++ [estrada])) : drawMap (x,y+1) ts
+  Relva -> translate 0 (fromIntegral(y*(-100))) (Pictures (relva : drawLine x (t,os))) : drawMap (x,y+1) ts
+  Rio _ -> translate 0 (fromIntegral(y*(-100))) (Pictures (rio : drawLine x (t,os))) : drawMap (x,y+1) ts
+  Estrada _ -> translate 0 (fromIntegral(y*(-100))) (Pictures (estrada : drawLine x (t,os))) : drawMap (x,y+1) ts
 
 drawLine :: Int -> (Terreno,[Obstaculo]) -> [Picture]
 drawLine _ (_,[]) = []
 drawLine x (Relva,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*50)) 0 Blank : drawLine (x+1) (Relva,os)
-  Arvore -> translate (fromIntegral(x*50)) 0 arvore : drawLine (x+1) (Relva,os)
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Relva,os)
+  Arvore -> translate (fromIntegral(x*80)) 0 arvore : drawLine (x+1) (Relva,os)
 drawLine x (Rio v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*50)) 0 Blank : drawLine (x+1) (Rio v,os)
-  Tronco -> translate (fromIntegral(x*50)) 0 tronco : drawLine (x+1) (Rio v,os)
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Rio v,os)
+  Tronco -> translate (fromIntegral(x*80)) 0 tronco : drawLine (x+1) (Rio v,os)
 drawLine x (Estrada v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*50)) 0 Blank : drawLine (x+1) (Estrada v,os)
-  Carro -> translate (fromIntegral(x*50)) 0 carro : drawLine (x+1) (Estrada v,os)
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawLine (x+1) (Estrada v,os)
+  Carro -> translate (fromIntegral(x*80)) 0 carro : drawLine (x+1) (Estrada v,os)
 
 event :: Event -> Estado -> Estado
 --menu inicial
@@ -98,16 +111,20 @@ event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo) = (MenuJogar, jo
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo) = error "Fim de Jogo"
 
 --movimentos no jogo   (jogoTerminou aqui ?)
-event (EventKey (SpecialKey KeySpace) Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
+event (EventKey (Char 'q') Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
 event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll)) = case key of
-  KeyUp -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll))
-  KeyDown -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll))
-  KeyRight -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll))
-  KeyLeft -> if jogoTerminou (Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll)) then (Perdeu, Jogo (Jogador (c)) (Mapa l ll)) else (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll))
+  KeyUp -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll))
+  KeyDown -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll))
+  KeyRight -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll))
+  KeyLeft -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll))
 
 --menu de pausa
-event (EventKey (SpecialKey KeyEsc) Down _ _) (Pausa VoltarJogo, jogo) = (Jogar, jogo)
-event (EventKey (SpecialKey KeyEsc) Down _ _) (Pausa Sair, jogo) = (Jogar, jogo)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo) = (Pausa Sair, jogo)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa VoltarJogo, jogo) = (Pausa Sair, jogo)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa Sair, jogo) = (Pausa VoltarJogo, jogo)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa Sair, jogo) = (Pausa VoltarJogo, jogo)
+event (EventKey (Char 'q') Down _ _) (Pausa VoltarJogo, jogo) = (Jogar, jogo)
+event (EventKey (Char 'q') Down _ _) (Pausa Sair, jogo) = (Jogar, jogo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo) = (Jogar, jogo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa Sair, jogo) = error "Fim de Jogo"
 event _ e = e
@@ -117,7 +134,7 @@ event _ e = e
 --deslizar o mapa (?)
 --score
 time :: Float -> Estado -> Estado --a passagem do tempo é a movimentação dos obstáculos
-time t (Jogar, jogo) = (Jogar, animaJogo jogo Parado)
+--time t (Jogar, jogo) = (Jogar, animaJogo jogo Parado)
 time t (m, jogo) = (m, jogo)
 
 main :: IO ()
