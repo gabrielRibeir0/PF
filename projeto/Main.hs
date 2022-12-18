@@ -12,14 +12,22 @@ import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
 data ModoJogo = MenuJogar   --opção 'jogar' selecionada no menu
-                | MenuSair  --opção 'sair' selecionada no menu (add mais?)
+                | MenuCreditos
+                | MenuSair  --opção 'sair' selecionada no menu 
                 | Jogar     --enquanto joga
-                | Perdeu     --quando o jogo termina
+                | Creditos
+                | Perdeu MenuPerdeu     --quando o jogo termina
                 | Pausa MenuPausa --menu de pausa (tipo o menu inicial, mas com opções de voltar ou sair)
+              deriving Eq
 
-data MenuPausa = VoltarJogo | Sair
+data MenuPausa = VoltarJogo | GuardarSair | SairPausa 
+  deriving Eq
 
-type Estado = (ModoJogo, Jogo)
+data MenuPerdeu = JogarDeNovo | PerdeuSair
+  deriving Eq
+
+type Score = Float
+type Estado = (ModoJogo, Jogo, Score)
 
 gerarMapaInicial :: [Int]  --lista de números aleatórios
                  -> Mapa   --mapa gerado (no início vazio)
@@ -35,18 +43,18 @@ mainDisplay = InWindow "Crossy Road" (640,1000) (0,0)
 exmap :: Mapa
 exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum, Arvore])
             ,(Relva, [Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
-            ,(Estrada 1, [Nenhum, Carro, Carro, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
-            ,(Estrada 1, [Nenhum, Carro, Nenhum, Nenhum, Nenhum, Carro, Carro, Carro])
+            ,(Estrada 2, [Carro, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
+            ,(Estrada 1, [Carro, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum])
             ,(Estrada (-1), [Nenhum, Nenhum, Nenhum, Carro, Nenhum, Nenhum, Nenhum, Nenhum])
             ,(Relva, [Arvore, Arvore, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Arvore])
             ,(Relva, [Arvore, Nenhum, Arvore, Nenhum, Nenhum, Nenhum, Arvore, Arvore])
             ,(Rio 2, [Tronco, Tronco, Nenhum, Tronco, Tronco, Nenhum, Nenhum, Nenhum])
             ,(Rio (-1), [Nenhum, Tronco, Tronco, Tronco, Nenhum, Tronco, Tronco, Tronco])
-            ,(Rio 1, [Tronco, Nenhum, Nenhum, Tronco, Nenhum, Nenhum, Tronco, Tronco])
+            ,(Relva, [Arvore, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Arvore])
             ]
 
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) exmap)
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (0,0)) exmap, 0)
 
 --estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) mapaInicial)
 
@@ -77,14 +85,22 @@ jogador :: Picture
 jogador = translate 40 50 (color yellow (circleSolid 40))
 --------
 
+--substituir menus por imagens (tipo o tanks risingfan)
 drawState :: Estado -> Picture
-drawState (MenuJogar, jogo) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Sair"]
-drawState (MenuSair, jogo) = Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
-drawState (Pausa VoltarJogo, jogo) = Pictures [Color blue $ drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Sair"]
-drawState (Pausa Sair, jogo) = Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Sair"]
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll)) = Pictures (drawLines (0,0) ll ++ [Translate i j jogador])
-  where i = fromIntegral (-240 + x*80)
+drawState (MenuJogar, jogo, _) = Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Creditos", Translate 0 (-140) $ drawOption "Sair"]
+drawState (MenuCreditos, jogo, _) = Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Creditos", Translate 0 (-140) $ drawOption "Sair"]
+drawState (MenuSair, jogo, _) = Pictures [drawOption "Jogar", Translate 0 (-70) $ drawOption "Creditos", Color blue $ Translate 0 (-140) $ drawOption "Sair"]
+
+drawState (Creditos, jogo, _) = Pictures [ Color blue $ drawOption "Feito por:"]
+
+drawState (Pausa VoltarJogo, jogo, _) = Pictures [Color blue $ drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Guardar e Sair",Translate 0 (-140) $ drawOption "Sair"]
+drawState (Pausa GuardarSair, jogo, _) = Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Guardar e Sair",Translate 0 (-140) $ drawOption "Sair"]
+drawState (Pausa SairPausa, jogo, _) = Pictures [drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Guardar e Sair", Color blue $ Translate 0 (-140) $ drawOption "Sair"]
+
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score) = Pictures (drawLines (0,0) ll ++ [Translate i j jogador])
+  where i = fromIntegral (-320 + x*80)
         j = fromIntegral (400 - (y*100))
+
 
 --desenhar cada linha e chamar a função para os obstáculos
 drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
@@ -109,31 +125,35 @@ drawObstacles x (Estrada v,o:os) = case o of
 
 event :: Event -> Estado -> Estado
 --menu inicial
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuJogar, jogo) = (MenuSair, jogo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuJogar, jogo) = (MenuSair, jogo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuJogar, jogo) = (Jogar, jogo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo) = (MenuJogar, jogo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuJogar, jogo, score) = (MenuSair, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuJogar, jogo, score) = (MenuCreditos, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuJogar, jogo, score) = (Jogar, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score) = (MenuJogar, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuCreditos, jogo, score) = (MenuSair, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuCreditos, jogo, score) = (Creditos, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score) = (MenuCreditos, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo, score) = (MenuCreditos, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score) = (MenuJogar, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo, _) = error "Fim de Jogo"
 
---movimentos no jogo   (jogoTerminou aqui ?)
-event (EventKey (Char 'q') Down _ _) (Jogar, jogo) = (Pausa VoltarJogo, jogo)
-event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll)) = case key of
-  KeyUp -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll))
-  KeyDown -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll))
-  KeyRight -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll))
-  KeyLeft -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll))
-  _ -> (Jogar, Jogo (Jogador c) (Mapa l ll))
+--movimentos no jogo
+event (EventKey (Char 'q') Down _ _) (Jogar, jogo, score) = (Pausa VoltarJogo, jogo, score)
+event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll), score) = case key of
+  KeyUp -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll), score)
+  KeyDown -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll), score)
+  KeyRight -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll), score)
+  KeyLeft -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll), score)
 
 --menu de pausa
-event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo) = (Pausa Sair, jogo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa VoltarJogo, jogo) = (Pausa Sair, jogo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa Sair, jogo) = (Pausa VoltarJogo, jogo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa Sair, jogo) = (Pausa VoltarJogo, jogo)
-event (EventKey (Char 'q') Down _ _) (Pausa VoltarJogo, jogo) = (Jogar, jogo)
-event (EventKey (Char 'q') Down _ _) (Pausa Sair, jogo) = (Jogar, jogo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo) = (Jogar, jogo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa Sair, jogo) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo, score) = (Pausa SairPausa, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa VoltarJogo, jogo, score) = (Pausa GuardarSair, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa GuardarSair, jogo, score) = (Pausa VoltarJogo, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa GuardarSair, jogo, score) = (Pausa SairPausa, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa SairPausa, jogo, score) = (Pausa GuardarSair, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa SairPausa, jogo, score) = (Pausa VoltarJogo, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo, score) = (Jogar, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, jogo, score) = error "Fim de Jogo"
+event (EventKey (Char 'q') Down _ _) (Pausa _, jogo, score) = (Jogar, jogo, score)
 event _ e = e
 
 --time ->
@@ -141,8 +161,9 @@ event _ e = e
 --deslizar o mapa (?)
 --score
 time :: Float -> Estado -> Estado --a passagem do tempo é a movimentação dos obstáculos
---time t (Jogar, jogo) = (Jogar, animaJogo jogo Parado)
-time t (m, jogo) = (m, jogo)
+time t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = (m,jogo, score) 
+                                                           | jogoTerminou jogo = (Perdeu JogarDeNovo, jogo, score)
+                                                           | otherwise = (m,Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score)
 
 main :: IO ()
 main = do 
@@ -151,8 +172,16 @@ main = do
   let mapaInicial = gerarMapaInicial randList (Mapa 8 []) 10    --onde se define a largura e o número de linhas que o mapa tem
   play mainDisplay
        (greyN 0.25)      --background color
-       15                --fps
+       1                --fps
        (estadoInicial mapaInicial)
        drawState
        event 
        time
+
+--TODO
+--drawState para Perdeu
+--imagens para os menus
+--imagens para obstáculos e jogador
+--deslizaMapa
+--,...
+--salvar progresso no GuardarSair
