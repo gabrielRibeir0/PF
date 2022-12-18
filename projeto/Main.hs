@@ -101,6 +101,9 @@ drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score) = Pictures (drawLines
   where i = fromIntegral (-320 + x*80)
         j = fromIntegral (400 - (y*100))
 
+drawState (Perdeu JogarDeNovo,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (round score)), Translate 0 (-70) $ Color blue $ drawOption "Jogar de Novo",Translate 0 (-140) $ drawOption "Sair"]
+drawState (Perdeu PerdeuSair,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (round score)), Translate 0 (-70) $ drawOption "Jogar de Novo",Translate 0 (-140) $ Color blue $ drawOption "Sair"]
+
 
 --desenhar cada linha e chamar a função para os obstáculos
 drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
@@ -143,6 +146,7 @@ event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll),
   KeyDown -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll), score)
   KeyRight -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll), score)
   KeyLeft -> (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll), score)
+  _ -> (Jogar, Jogo (Jogador c) (Mapa l ll),score) 
 
 --menu de pausa
 event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo, score) = (Pausa SairPausa, jogo, score)
@@ -154,16 +158,23 @@ event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa SairPausa, jogo, score) = 
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo, score) = (Jogar, jogo, score)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, jogo, score) = error "Fim de Jogo"
 event (EventKey (Char 'q') Down _ _) (Pausa _, jogo, score) = (Jogar, jogo, score)
-event _ e = e
 
+event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu JogarDeNovo, jogo, score) = (Perdeu PerdeuSair, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu JogarDeNovo, jogo, score) = (Perdeu PerdeuSair, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu PerdeuSair, jogo, score) = (Perdeu JogarDeNovo, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu PerdeuSair, jogo, score) = (Perdeu JogarDeNovo, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu JogarDeNovo, jogo, score) = (MenuJogar, jogo, 0)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair, jogo, score) = error "Fim de Jogo"
+
+event _ e = e
 --time ->
 --mover obstaculos com as velocidades (?)
 --deslizar o mapa (?)
 --score
-time :: Float -> Estado -> Estado --a passagem do tempo é a movimentação dos obstáculos
-time t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = (m,jogo, score) 
-                                                           | jogoTerminou jogo = (Perdeu JogarDeNovo, jogo, score)
-                                                           | otherwise = (m,Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score)
+time :: Int -> Float -> Estado -> Estado --a passagem do tempo é a movimentação dos obstáculos
+time n t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = (m,jogo, score) 
+                                                             | jogoTerminou jogo = (Perdeu JogarDeNovo, jogo, score)
+                                                             | otherwise = (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score)
 
 main :: IO ()
 main = do 
@@ -176,12 +187,12 @@ main = do
        (estadoInicial mapaInicial)
        drawState
        event 
-       time
+       (time n)
 
 --TODO
---drawState para Perdeu
 --imagens para os menus
 --imagens para obstáculos e jogador
---deslizaMapa
+--arranjar deslizaJogo -> mais suave e rapidez
+--contar o score com o passar do tempo
 --,...
 --salvar progresso no GuardarSair
