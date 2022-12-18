@@ -54,7 +54,7 @@ exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum,
             ]
 
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (0,0)) exmap, 0)
+estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (0,0)) mapaInicial, 0)
 
 --estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) mapaInicial)
 
@@ -97,12 +97,12 @@ drawState (Pausa VoltarJogo, jogo, _) = Pictures [Color blue $ drawOption "Volta
 drawState (Pausa GuardarSair, jogo, _) = Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Guardar e Sair",Translate 0 (-140) $ drawOption "Sair"]
 drawState (Pausa SairPausa, jogo, _) = Pictures [drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Guardar e Sair", Color blue $ Translate 0 (-140) $ drawOption "Sair"]
 
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score) = Pictures (drawLines (0,0) ll ++ [Translate i j jogador])
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score) = Pictures (drawLines (0,0) ll ++ [Translate i j jogador] ++ [Color yellow $ Translate (-290) 460 $ Scale 0.5 0.5 $ drawOption ("Score: " ++ show (truncate score))] )
   where i = fromIntegral (-320 + x*80)
         j = fromIntegral (400 - (y*100))
 
-drawState (Perdeu JogarDeNovo,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (round score)), Translate 0 (-70) $ Color blue $ drawOption "Jogar de Novo",Translate 0 (-140) $ drawOption "Sair"]
-drawState (Perdeu PerdeuSair,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (round score)), Translate 0 (-70) $ drawOption "Jogar de Novo",Translate 0 (-140) $ Color blue $ drawOption "Sair"]
+drawState (Perdeu JogarDeNovo,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (truncate score)), Translate 0 (-70) $ Color blue $ drawOption "Jogar de Novo",Translate 0 (-140) $ drawOption "Sair"]
+drawState (Perdeu PerdeuSair,jogo,score) = Pictures [Color red $ drawOption ("Score: " ++ show (truncate score)), Translate 0 (-70) $ drawOption "Jogar de Novo",Translate 0 (-140) $ Color blue $ drawOption "Sair"]
 
 
 --desenhar cada linha e chamar a função para os obstáculos
@@ -172,9 +172,10 @@ event _ e = e
 --deslizar o mapa (?)
 --score
 time :: Int -> Float -> Estado -> Estado --a passagem do tempo é a movimentação dos obstáculos
-time n t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = (m,jogo, score) 
-                                                             | jogoTerminou jogo = (Perdeu JogarDeNovo, jogo, score)
-                                                             | otherwise = (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score)
+--time n t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = (m,jogo, score) 
+--                                                             | jogoTerminou jogo = (Perdeu JogarDeNovo, jogo, score)
+--                                                             | otherwise = (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score)
+time n t e = e
 
 main :: IO ()
 main = do 
@@ -194,5 +195,6 @@ main = do
 --imagens para obstáculos e jogador
 --arranjar deslizaJogo -> mais suave e rapidez
 --contar o score com o passar do tempo
+--forma de com o jogar novamente o mapa ser diferente ou usar o mesmo mapa para as primeiras n linhas e o random só vem na nova geração de linhas comk a deslizaJogo
 --,...
 --salvar progresso no GuardarSair
