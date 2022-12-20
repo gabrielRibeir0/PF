@@ -214,4 +214,3 @@ main = do
 --imagens para obstáculos e jogador
 --arranjar deslizaJogo -> mais suave e rapidez [usar o score para regularizar o deslizaJogo(?) ou junat um parâmetro do tempo ao estado]
 --,...
---salvar progresso no GuardarSair
