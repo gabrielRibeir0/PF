@@ -11,14 +11,14 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
-data ModoJogo = MenuNovoJogo --opção 'jogar' selecionada no menu
-              | MenuContinuarJogo
-              | MenuCreditos
-              | MenuSair  --opção 'sair' selecionada no menu 
-              | Jogar     --enquanto joga
-              | Creditos
-              | Perdeu MenuPerdeu     --quando o jogo termina
-              | Pausa MenuPausa --menu de pausa (tipo o menu inicial, mas com opções de voltar ou sair)
+data ModoJogo = MenuNovoJogo      --opção 'jogar' selecionada no menu
+              | MenuContinuarJogo --opção 'continuar a jogar'
+              | MenuCreditos      --opção 'créditos'
+              | MenuSair          --opção 'sair' selecionada no menu 
+              | Jogar             --enquanto joga
+              | Creditos          --parte dos créditos
+              | Perdeu MenuPerdeu --menu quando o jogo termina
+              | Pausa MenuPausa   --menu de pausa
               deriving Eq
 
 data MenuPausa = VoltarJogo | GuardarSair | SairPausa 
