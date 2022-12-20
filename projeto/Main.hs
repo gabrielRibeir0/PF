@@ -11,13 +11,14 @@ import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import System.Random
 
-data ModoJogo = MenuJogar   --opção 'jogar' selecionada no menu
-                | MenuCreditos
-                | MenuSair  --opção 'sair' selecionada no menu 
-                | Jogar     --enquanto joga
-                | Creditos
-                | Perdeu MenuPerdeu     --quando o jogo termina
-                | Pausa MenuPausa --menu de pausa (tipo o menu inicial, mas com opções de voltar ou sair)
+data ModoJogo = MenuNovoJogo --opção 'jogar' selecionada no menu
+              | MenuContinuarJogo
+              | MenuCreditos
+              | MenuSair  --opção 'sair' selecionada no menu 
+              | Jogar     --enquanto joga
+              | Creditos
+              | Perdeu MenuPerdeu     --quando o jogo termina
+              | Pausa MenuPausa --menu de pausa (tipo o menu inicial, mas com opções de voltar ou sair)
               deriving Eq
 
 data MenuPausa = VoltarJogo | GuardarSair | SairPausa 
@@ -53,10 +54,12 @@ exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum,
             ,(Relva, [Arvore, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Nenhum, Arvore])
             ]
 
+baseMapa :: Mapa
+baseMapa = Mapa 8 [(Relva,[Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Arvore]),(Relva,[Arvore,Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Arvore,Arvore]),(Relva,[Arvore,Arvore,Arvore,Nenhum,Nenhum,Arvore,Arvore,Arvore])]
 estadoInicial :: Mapa -> Estado
-estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (0,0)) mapaInicial, 0)
+estadoInicial mapaInicial = (MenuNovoJogo, Jogo (Jogador (0,0)) mapaInicial, 0)
 
---estadoInicial mapaInicial = (MenuJogar, Jogo (Jogador (2,0)) mapaInicial)
+--estadoInicial mapaInicial = (MenuNovoJogo, Jogo (Jogador (2,0)) mapaInicial)
 
 --função dos exemplos para escrever os textos das opções
 drawOption :: String -> Picture
@@ -87,9 +90,10 @@ jogador = translate 40 50 (color yellow (circleSolid 40))
 
 --substituir menus por imagens (tipo o tanks risingfan)
 drawState :: Estado -> IO Picture
-drawState (MenuJogar, jogo, _) = return (Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Creditos", Translate 0 (-140) $ drawOption "Sair"])
-drawState (MenuCreditos, jogo, _) = return (Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Creditos", Translate 0 (-140) $ drawOption "Sair"])
-drawState (MenuSair, jogo, _) = return (Pictures [drawOption "Jogar", Translate 0 (-70) $ drawOption "Creditos", Color blue $ Translate 0 (-140) $ drawOption "Sair"])
+drawState (MenuNovoJogo, jogo, _) = return (Pictures [Color blue $ drawOption "Jogar", Translate 0 (-70) $ drawOption "Continuar Jogo", Translate 0 (-140) $ drawOption "Creditos", Translate 0 (-210) $ drawOption "Sair"])
+drawState (MenuContinuarJogo, jogo, _) = return (Pictures [drawOption "Jogar", Color blue $ Translate 0 (-70) $ drawOption "Continuar Jogo", Translate 0 (-140) $ drawOption "Creditos", Translate 0 (-210) $ drawOption "Sair"])
+drawState (MenuCreditos, jogo, _) = return (Pictures [drawOption "Jogar", Translate 0 (-70) $ drawOption "Continuar Jogo", Color blue $ Translate 0 (-140) $ drawOption "Creditos", Translate 0 (-210) $ drawOption "Sair"])
+drawState (MenuSair, jogo, _) = return (Pictures [drawOption "Jogar", Translate 0 (-70) $ drawOption "Continuar Jogo", Translate 0 (-140) $ drawOption "Creditos", Color blue $ Translate 0 (-210) $ drawOption "Sair"])
 
 drawState (Creditos, jogo, _) = return (Pictures [ Color blue $ drawOption "Feito por:"])
 
@@ -128,16 +132,23 @@ drawObstacles x (Estrada v,o:os) = case o of
 
 event :: Event -> Estado -> IO Estado
 --menu inicial
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuJogar, jogo, score) = return (MenuSair, jogo, score)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuJogar, jogo, score) = return (MenuCreditos, jogo, score)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuJogar, jogo, score) = return (Jogar, jogo, score)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score) = return (MenuJogar, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuNovoJogo, jogo, score) = return (MenuSair, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuNovoJogo, jogo, score) = return (MenuContinuarJogo, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuNovoJogo, jogo, score) = return (Jogar, jogo, score)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuContinuarJogo, jogo, score) = return (MenuNovoJogo, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score) = return (MenuCreditos, jogo, score)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score) = do 
+  save <- readFile "save.txt"
+  let sJogo = read $ head $ lines save
+  let sScore = read $ last $ lines save
+  if null save then return (Jogar,jogo,score) else return (Jogar, sJogo, sScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score) = return (MenuContinuarJogo, jogo, score)
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuCreditos, jogo, score) = return (MenuSair, jogo, score)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuCreditos, jogo, score) = return (Creditos, jogo, score)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score) = return (MenuCreditos, jogo, score)
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo, score) = return (MenuCreditos, jogo, score)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score) = return (MenuJogar, jogo, score)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score) = return (MenuNovoJogo, jogo, score)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, jogo, _) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score) = return (MenuCreditos, jogo, score)
 
 --movimentos no jogo
 event (EventKey (Char 'q') Down _ _) (Jogar, jogo, score) = return  (Pausa VoltarJogo, jogo, score)
@@ -156,7 +167,12 @@ event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa GuardarSair, jogo, score) 
 event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa SairPausa, jogo, score) = return (Pausa GuardarSair, jogo, score)
 event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa SairPausa, jogo, score) = return (Pausa VoltarJogo, jogo, score)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo, score) = return (Jogar, jogo, score)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, jogo, score) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa GuardarSair, jogo, score) = do
+  writeFile "save.txt" (show jogo ++ "\n" ++ show score)
+  error "Fim de Jogo"
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, jogo, score) = do
+  writeFile "save.txt" ""
+  error "Fim de Jogo"
 event (EventKey (Char 'q') Down _ _) (Pausa _, jogo, score) = return  (Jogar, jogo, score)
 
 --menu perdeu
@@ -166,29 +182,28 @@ event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu PerdeuSair, jogo, score) = 
 event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu PerdeuSair, jogo, score) = return (Perdeu JogarDeNovo, jogo, score)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu JogarDeNovo, jogo, score) = do
   n <- randomRIO (0,100)
-  let randList = take 7 $ randoms (mkStdGen n)                 --
-  let novoMapa = gerarMapa randList (Mapa 8 [(Relva,[Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Arvore]),(Relva,[Arvore,Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Arvore,Arvore]),(Relva,[Arvore,Arvore,Arvore,Nenhum,Nenhum,Arvore,Arvore,Arvore])]) 7
-  return (MenuJogar, Jogo (Jogador (0,0)) novoMapa, 0)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair, jogo, score) = error "Fim de Jogo"
+  let randList = take 7 $ randoms (mkStdGen n)
+  let novoMapa = gerarMapa randList baseMapa 7
+  return (MenuNovoJogo, Jogo (Jogador (0,0)) novoMapa, 0)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair, jogo, score) = do 
+  writeFile "save.txt" ""
+  error "Fim de Jogo"
 
 event _ e = return e
---time ->
---mover obstaculos com as velocidades (?)
---deslizar o mapa (?)
---score
-time :: Int -> Float -> Estado -> IO Estado --a passagem do tempo é a movimentação dos obstáculos
-time n t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = return (m,jogo, score) 
-                                                             | jogoTerminou jogo = return (Perdeu JogarDeNovo, jogo, score)
-                                                             | otherwise = return (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score+0.25)
 
+time :: Int -> Float -> Estado -> IO Estado --a passagem do tempo é a movimentação dos obstáculos
+--time n t (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score) | m /= Jogar = return (m,jogo, score) 
+--                                                             | jogoTerminou jogo = return (Perdeu JogarDeNovo, jogo, score)
+--                                                             | otherwise = return (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score+0.25)
+time _ _ e = return e
 main :: IO ()
 main = do 
   n <- randomRIO (0,100)
   let randList = take 7 $ randoms (mkStdGen n)                 --
-  let mapaInicial = gerarMapa randList (Mapa 8 [(Relva,[Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Arvore]),(Relva,[Arvore,Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Arvore,Arvore]),(Relva,[Arvore,Arvore,Arvore,Nenhum,Nenhum,Arvore,Arvore,Arvore])]) 7    --onde se define a largura e o número de linhas que o mapa tem
+  let mapaInicial = gerarMapa randList baseMapa 7    --onde se define a largura e o número de linhas que o mapa tem
   playIO mainDisplay
        (greyN 0.25)      --background color
-       2                --fps
+       1                --fps
        (estadoInicial mapaInicial)
        drawState
        event 
@@ -197,8 +212,6 @@ main = do
 --TODO
 --imagens para os menus
 --imagens para obstáculos e jogador
---arranjar deslizaJogo -> mais suave e rapidez
---contar o score com o passar do tempo
---forma de com o jogar novamente o mapa ser diferente ou usar o mesmo mapa para as primeiras n linhas e o random só vem na nova geração de linhas comk a deslizaJogo
+--arranjar deslizaJogo -> mais suave e rapidez [usar o score para regularizar o deslizaJogo(?) ou junat um parâmetro do tempo ao estado]
 --,...
 --salvar progresso no GuardarSair
