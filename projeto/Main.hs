@@ -32,6 +32,7 @@ data MenuPerdeu = JogarDeNovo | PerdeuSair
   deriving Eq
 
 type Score = Float
+
 type Estado = (ModoJogo, Jogo, Score, [Picture])
 
 gerarMapa :: [Int]  --lista de números aleatórios
@@ -143,18 +144,22 @@ event (EventKey (SpecialKey KeyUp) Down _ _) (MenuNovoJogo, jogo, score, images)
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuNovoJogo, jogo, score, images) = return (MenuContinuarJogo, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuNovoJogo, jogo, score, images) = return (Jogar, jogo, score, images)
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuContinuarJogo, jogo, score, images) = return (MenuNovoJogo, jogo, score, images)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, images) = return (MenuCreditos, jogo, score, images)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, images) = return (MenuControlos, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score, images) = do 
   save <- readFile "save.txt"
   let sJogo = read $ head $ lines save
   let sScore = read $ last $ lines save
   if null save then return (Jogar, jogo, score, images) else return (Jogar, sJogo, sScore, images)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score, images) = return (MenuContinuarJogo, jogo, score, images)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuControlos, jogo, score, images) = return (MenuContinuarJogo, jogo, score, images)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuControlos, jogo, score, images) = return (MenuCreditos, jogo, score, images)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuControlos, jogo, score, images) = return (Controlos, jogo, score, images)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score, images) = return (MenuControlos, jogo, score, images)
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuCreditos, jogo, score, images) = return (MenuSair, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuCreditos, jogo, score, images) = return (Creditos, jogo, score, images)
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo, score, images) = return (MenuCreditos, jogo, score, images)
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score, images) = return (MenuNovoJogo, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, _ , _ , _) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Controlos, jogo, score, images) = return (MenuControlos, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score, images) = return (MenuCreditos, jogo, score, images)
 
 --movimentos no jogo
@@ -211,7 +216,7 @@ main = do
   menuControlos <- loadJuicyPNG "img/MenuControlos.png"
   menuCreditos <- loadJuicyPNG "img/MenuCreditos.png"
   menuSair <- loadJuicyPNG "img/MenuSair.png"
-  let images = map fromJust [menuNovoJogo,menuContinuarJogo,menuCreditos,menuSair]
+  let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair]
   n <- randomRIO (0,100)
   let randList = take 7 $ randoms (mkStdGen n)                 --
   let mapaInicial = gerarMapa randList baseMapa 7    --onde se define a largura e o número de linhas que o mapa tem
@@ -224,7 +229,7 @@ main = do
        (time n)
 
 --TODO
---imagens para os menus
+--imagens para os menus pausa e perder
 --imagens para obstáculos e jogador
---arranjar deslizaJogo -> mais suave e rapidez [usar o score para regularizar o deslizaJogo(?) ou junat um parâmetro do tempo ao estado]
+--arranjar deslizaJogo -> mais suave e rapidez [usar o score para regularizar o deslizaJogo(?) ou juntar um parâmetro do tempo ao estado]
 --,...
