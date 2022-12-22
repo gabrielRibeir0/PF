@@ -9,7 +9,7 @@ import T5
 import Data.List
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
-import System.Random
+import System.Random ( mkStdGen, randomRIO, Random(randoms) )
 import Graphics.Gloss.Juicy
 import Data.Maybe
 
@@ -60,7 +60,7 @@ exmap = Mapa 8 [(Relva, [Nenhum, Arvore, Nenhum, Nenhum, Arvore, Nenhum, Nenhum,
             ]
 
 baseMapa :: Mapa
-baseMapa = Mapa 8 [(Relva,[Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Arvore]),(Relva,[Arvore,Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Arvore,Arvore]),(Relva,[Arvore,Arvore,Arvore,Nenhum,Nenhum,Arvore,Arvore,Arvore])]
+baseMapa = Mapa 8 [(Relva,[Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum]),(Relva,[Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Arvore]),(Relva,[Arvore,Arvore,Nenhum,Nenhum,Nenhum,Nenhum,Arvore,Arvore])]
 
 estadoInicial :: Mapa -> [Picture] -> Estado
 estadoInicial mapaInicial images = (MenuNovoJogo, Jogo (Jogador (0,0)) mapaInicial, 0, images)
@@ -94,7 +94,6 @@ jogador :: Picture
 jogador = translate 40 50 (color yellow (circleSolid 40))
 --------
 
---substituir menus por imagens (tipo o tanks risingfan)
 drawState :: Estado -> IO Picture
 drawState (MenuNovoJogo, jogo, _, images) = return (head images)
 drawState (MenuContinuarJogo, jogo ,_, images) = return (images !! 1)
@@ -102,14 +101,14 @@ drawState (MenuControlos, jogo, _, images) = return (images !! 2)
 drawState (MenuCreditos, jogo, _, images) = return (images !! 3)
 drawState (MenuSair, jogo, _, images) = return (images !! 4)
 
-drawState (Controlos, jogo, _, images) = return (Pictures [ Color blue $ drawOption "Controlos"])
+drawState (Controlos, jogo, _, images) = return (images !! 5)
 drawState (Creditos, jogo, _, images) = return (Pictures [ Color blue $ drawOption "Feito por:"])
 
 drawState (Pausa VoltarJogo, jogo, _, images) = return (Pictures [Color blue $ drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Guardar e Sair",Translate 0 (-140) $ drawOption "Sair"])
 drawState (Pausa GuardarSair, jogo, _, images) = return (Pictures [drawOption "Voltar ao Jogo", Color blue $ Translate 0 (-70) $ drawOption "Guardar e Sair",Translate 0 (-140) $ drawOption "Sair"])
 drawState (Pausa SairPausa, jogo, _, images) = return (Pictures [drawOption "Voltar ao Jogo", Translate 0 (-70) $ drawOption "Guardar e Sair", Color blue $ Translate 0 (-140) $ drawOption "Sair"])
 
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images) = return (Pictures (drawLines (0,0) ll ++ [Translate i j jogador] ++ [Color yellow $ Translate (-290) 460 $ Scale 0.5 0.5 $ drawOption ("Score: " ++ show (truncate score))]))
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images) = return (Pictures (drawLines (0,0) ll images ++ [Translate i j jogador] ++ [Color yellow $ Translate (-290) 460 $ Scale 0.5 0.5 $ drawOption ("Score: " ++ show (truncate score))]))
   where i = fromIntegral (-320 + x*80)
         j = fromIntegral (400 - (y*100))
 
@@ -118,25 +117,27 @@ drawState (Perdeu PerdeuSair,jogo,score, images) = return (Pictures [Color red $
 
 
 --desenhar cada linha e chamar a função para os obstáculos
-drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture]
-drawLines _  [] = []
-drawLines (x,y) ((t,os):ts) = case t of 
-  Relva -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (relva : drawObstacles x (t,os))) : drawLines (x,y+1) ts
-  Rio _ -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (rio : drawObstacles x (t,os))) : drawLines (x,y+1) ts
-  Estrada _ -> translate (-320) (fromIntegral(400 - (y*100))) (Pictures (estrada : drawObstacles x (t,os))) : drawLines (x,y+1) ts
+drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture] -> [Picture]
+drawLines _  [] _ = []
+drawLines (x,y) ((t,os):ts) images = case t of 
+  Relva -> translate (-280) (fromIntegral(450 - (y*100))) (Pictures (translate 280 0 (images !! 6) : drawObstacles x (t,os) images)) : drawLines (x,y+1) ts images
+  Rio _ -> translate (-280) (fromIntegral(450 - (y*100))) (Pictures (translate 280 0 (images !! 8) : drawObstacles x (t,os) images)) : drawLines (x,y+1) ts images 
+  Estrada _ -> translate (-280) (fromIntegral(450 - (y*100))) (Pictures (translate 280 0 (images !! 7) : drawObstacles x (t,os) images)) : drawLines (x,y+1) ts images
+
 
 --desenhar os obstáculos (chamada a cada linha)
-drawObstacles :: Int -> (Terreno,[Obstaculo]) -> [Picture]
-drawObstacles _ (_,[]) = []
-drawObstacles x (Relva,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Relva,os)
-  Arvore -> translate (fromIntegral(x*80)) 0 arvore : drawObstacles (x+1) (Relva,os)
-drawObstacles x (Rio v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Rio v,os)
-  Tronco -> translate (fromIntegral(x*80)) 0 tronco : drawObstacles (x+1) (Rio v,os)
-drawObstacles x (Estrada v,o:os) = case o of 
-  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Estrada v,os)
-  Carro -> translate (fromIntegral(x*80)) 0 carro : drawObstacles (x+1) (Estrada v,os)
+drawObstacles :: Int -> (Terreno,[Obstaculo]) -> [Picture] -> [Picture]
+drawObstacles _ (_,[]) _ = []
+drawObstacles x (Relva,o:os) images = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Relva,os) images
+  Arvore -> translate (fromIntegral(x*80)) 0 (images !! 12) : drawObstacles (x+1) (Relva,os) images 
+drawObstacles x (Rio v,o:os) images = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Rio v,os) images
+  Tronco -> translate (fromIntegral(x*80)) 0 (images !! 11) : drawObstacles (x+1) (Rio v,os) images 
+drawObstacles x (Estrada v,o:os) images = case o of 
+  Nenhum -> translate (fromIntegral(x*80)) 0 Blank : drawObstacles (x+1) (Estrada v,os) images 
+  Carro -> translate (fromIntegral(x*80)) 0 carPic : drawObstacles (x+1) (Estrada v,os) images
+    where carPic = if v > 0 then images !! 9 else images !! 10
 
 event :: Event -> Estado -> IO Estado
 --menu inicial
@@ -163,7 +164,7 @@ event (EventKey (SpecialKey KeyEnter) Down _ _) (Controlos, jogo, score, images)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score, images) = return (MenuCreditos, jogo, score, images)
 
 --movimentos no jogo
-event (EventKey (Char 'q') Down _ _) (Jogar, jogo, score, images) = return  (Pausa VoltarJogo, jogo, score, images)
+event (EventKey (Char 'p') Down _ _) (Jogar, jogo, score, images) = return  (Pausa VoltarJogo, jogo, score, images)
 event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll), score, images) = case key of
   KeyUp -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll), score, images)
   KeyDown -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll), score, images)
@@ -185,7 +186,7 @@ event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa GuardarSair, jogo, score,
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, _ , _ , _) = do
   writeFile "save.txt" ""
   error "Fim de Jogo"
-event (EventKey (Char 'q') Down _ _) (Pausa _, jogo, score, images) = return  (Jogar, jogo, score, images)
+event (EventKey (Char 'p') Down _ _) (Pausa _, jogo, score, images) = return  (Jogar, jogo, score, images)
 
 --menu perdeu
 event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu JogarDeNovo, jogo, score, images) = return (Perdeu PerdeuSair, jogo, score, images)
@@ -216,7 +217,15 @@ main = do
   menuControlos <- loadJuicyPNG "img/MenuControlos.png"
   menuCreditos <- loadJuicyPNG "img/MenuCreditos.png"
   menuSair <- loadJuicyPNG "img/MenuSair.png"
-  let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair]
+  controlos <- loadJuicyPNG "img/Controlos.png"
+  relva <- loadJuicyPNG "img/relva.png"
+  estrada <- loadJuicyPNG "img/estrada.png"
+  rio <- loadJuicyPNG "img/rio.png"
+  carro1d <- loadJuicyPNG "img/carro1d.png"
+  carro1e <- loadJuicyPNG "img/carro1e.png"
+  tronco <- loadJuicyPNG "img/tronco.png"
+  arvore <- loadJuicyPNG "img/arvore.png"
+  let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair, controlos, relva, estrada, rio, carro1d, carro1e, tronco, arvore]
   n <- randomRIO (0,100)
   let randList = take 7 $ randoms (mkStdGen n)                 --
   let mapaInicial = gerarMapa randList baseMapa 7    --onde se define a largura e o número de linhas que o mapa tem
@@ -231,5 +240,6 @@ main = do
 --TODO
 --imagens para os menus pausa e perder
 --imagens para obstáculos e jogador
+--mudar a função de desenhar para usar as imagens e arranjar os indices usados quando tudo estiver feito
 --arranjar deslizaJogo -> mais suave e rapidez [usar o score para regularizar o deslizaJogo(?) ou juntar um parâmetro do tempo ao estado]
 --,...
