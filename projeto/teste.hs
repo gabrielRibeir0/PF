@@ -46,7 +46,7 @@ main = do
   menuCreditos <- loadJuicyPNG "img/MenuCreditos.png"
   menuSair <- loadJuicyPNG "img/MenuSair.png"
   controlos <- loadJuicyPNG "img/Controlos.png"
-  relva <- loadJuicyPNG "img/relva.png"
+  relva <- loadJuicyPNG "img/galinhaFrente.png"
   estrada <- loadJuicyPNG "img/estrada.png"
   let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair, controlos, relva, estrada]  --onde se define a largura e o número de linhas que o mapa tem
-  display mainDisplay (greyN 0.5) (translate (0) (fromIntegral(450)) (Pictures ((images !! 6) : [circle 10])))
+  display mainDisplay (greyN 0.5) (translate (0) (0) (Pictures ((images !! 6) : [circle 5])))
