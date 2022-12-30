@@ -137,7 +137,7 @@ event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, 
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score, images, _, _) = do 
   save <- readFile "save.txt"
   let sJogo = read $ head $ lines save
-  let sScore = read $ lines save !! 2
+  let sScore = read $ lines save !! 1
   let sMove = read $ last $ lines save
   if null save then return (Jogar, jogo, score, images, Cima, 0) else return (Jogar, sJogo, sScore, images, sMove, 0)
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (MenuContinuarJogo, jogo, score, images, lastMove, tempo)
@@ -200,7 +200,7 @@ time _ (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score, images, lastMove, tem
                                                                                         1 -> do 
                                                                                             n <- randomRIO (0,100)
                                                                                             return (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score+0.25, images, lastMove,0)              
-                                                                                        _ -> return (m, Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score+0.25, images, lastMove,tempo+0.20)
+                                                                                        _ -> return (m, Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score+0.25, images, lastMove,tempo+0.25)
 
 -- | Função para correr o jogo.
 main :: IO ()
