@@ -79,14 +79,14 @@ drawState (Creditos, jogo, _, images, _, _) = return (images !! 6)
 drawState (Pausa VoltarJogo, jogo, _, images, _, _) = return (images !! 7)
 drawState (Pausa GuardarSair, jogo, _, images, _, _) = return (images !! 8)
 drawState (Pausa SairPausa, jogo, _, images, _, _) = return (images !! 9)
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) = return (Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ images !! 27] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show $ truncate score)]))
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) = return (Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ last images] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show $ truncate score)]))
   where i = fromIntegral (-280 + x*80)
         j = fromIntegral (450 - (y*100))
         playerPic = case lastMove of
           Cima -> images !! 23
           Baixo -> images !! 24
           Direita -> images !! 25
-          Esquerda -> last images
+          Esquerda -> images !! 26
 drawState (Perdeu JogarDeNovo, jogo, score, images, _, _) = return (Pictures((images !! 10) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show $ truncate score)])) 
 drawState (Perdeu PerdeuSair, jogo, score, images, _, _) = return (Pictures((images !! 11) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show $ truncate score)])) 
 
