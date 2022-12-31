@@ -45,7 +45,7 @@ data MenuPerdeu = JogarDeNovo | PerdeuSair
 type Score = Float
 
 -- | Contador auxiliar de tempo.
-type Tempo = Float
+type Tempo = Int
 
 -- | Estado do jogo para guardar informações: o modo de jogo, o jogo, a pontuação, a lista de imagens usadas, a direção do último movimento e o contador do tempo.
 type Estado = (ModoJogo, Jogo, Score, [Picture], Direcao, Tempo)
@@ -65,7 +65,7 @@ baseMapa = Mapa 8 [(Relva,[Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenh
 
 -- | Estado inicial do jogo.
 estadoInicial :: Mapa -> [Picture] -> Estado
-estadoInicial mapaInicial images = (MenuNovoJogo, Jogo (Jogador (4,8)) mapaInicial, 0, images, Cima, 0)
+estadoInicial mapaInicial images = (MenuNovoJogo, Jogo (Jogador (4,9)) mapaInicial, 0, images, Cima, 0)
 
 -- | Função para desenhar o jogo.
 drawState :: Estado -> IO Picture
@@ -79,16 +79,16 @@ drawState (Creditos, jogo, _, images, _, _) = return (images !! 6)
 drawState (Pausa VoltarJogo, jogo, _, images, _, _) = return (images !! 7)
 drawState (Pausa GuardarSair, jogo, _, images, _, _) = return (images !! 8)
 drawState (Pausa SairPausa, jogo, _, images, _, _) = return (images !! 9)
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) = return (Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ last images] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show $ truncate score)]))
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) = return $ Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ last images] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show (truncate score))])
   where i = fromIntegral (-280 + x*80)
         j = fromIntegral (450 - (y*100))
         playerPic = case lastMove of
-          Cima -> images !! 23
-          Baixo -> images !! 24
-          Direita -> images !! 25
-          Esquerda -> images !! 26
-drawState (Perdeu JogarDeNovo, jogo, score, images, _, _) = return (Pictures((images !! 10) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show $ truncate score)])) 
-drawState (Perdeu PerdeuSair, jogo, score, images, _, _) = return (Pictures((images !! 11) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show $ truncate score)])) 
+          Cima -> images !! 24
+          Baixo -> images !! 25
+          Direita -> images !! 26
+          Esquerda -> images !! 27
+drawState (Perdeu JogarDeNovo, jogo, score, images, _, _) = return $ Pictures((images !! 10) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show (truncate score))])
+drawState (Perdeu PerdeuSair, jogo, score, images, _, _) = return $ Pictures((images !! 11) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show (truncate score))])
 
 -- | Função para desenhar cada linha linha do mapa.
 drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture] -> [Picture]
@@ -106,7 +106,7 @@ drawObstacles x (Relva,o:os) images = case o of
   Arvore -> Translate (fromIntegral(x*80 - 280)) 0 (images !! 21) : drawObstacles (x+1) (Relva,os) images 
 drawObstacles x (Rio v,o:os) images = case o of 
   Nenhum -> Translate (fromIntegral(x*80 - 280)) 0 Blank : drawObstacles (x+1) (Rio v,os) images
-  Tronco -> Translate (fromIntegral(x*80 - 280)) 0 (images !! 22) : drawObstacles (x+1) (Rio v,os) images 
+  Tronco -> if v > 0 then Translate (fromIntegral(x*80 - 280)) 0 (images !! 22) : drawObstacles (x+1) (Rio v,os) images else Translate (fromIntegral(x*80 - 280)) 0 (images !! 23) : drawObstacles (x+1) (Rio v,os) images 
 drawObstacles _ (Estrada v,os) images | head(head gos) == Carro && head(last gos) == Carro = if lenHead + lenLast == 2 then Translate (-320) 0 carPic2 : drawMiddle 1 v (tail $ init gos) images ++ [Translate 320 0 carPic2] 
                                                                                              else if lenHead == 2 then Translate (-280) 0 carPic3 : drawMiddle 2 v (tail $ init gos) images ++ [Translate 360 0 carPic3]
                                                                                                   else Translate (-360) 0 carPic3 : drawMiddle 1 v (tail $ init gos) images ++ [Translate 280 0 carPic3]
@@ -126,7 +126,7 @@ drawMiddle x v ((Carro:ns):os) images | length ns + 1 == 1 = if v > 0 then Trans
                                       | length ns + 1 == 2 = if v > 0 then Translate (fromIntegral(x*80 - 240)) 0 (images !! 17) : drawMiddle (x+2) v os images else Translate (fromIntegral(x*80 - 240)) 0 (images !! 18) : drawMiddle (x+2) v os images
                                       | otherwise = if v > 0 then Translate (fromIntegral(x*80 - 200)) 0 (images !! 19) : drawMiddle (x+3) v os images else Translate (fromIntegral(x*80 - 200)) 0 (images !! 20) : drawMiddle (x+3) v os images
 
--- | Função para reagir às teclas pressionadas pelo utilizador
+-- | Função para reagir às teclas pressionadas pelo utilizador.
 event :: Event -> Estado -> IO Estado
 -- Eventos no menu inicial
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuNovoJogo, jogo, score, images, lastMove, tempo) = return (MenuSair, jogo, score, images, lastMove, tempo)
@@ -136,10 +136,10 @@ event (EventKey (SpecialKey KeyUp) Down _ _) (MenuContinuarJogo, jogo, score, im
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, images, lastMove, tempo) = return (MenuControlos, jogo, score, images, lastMove, tempo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score, images, _, _) = do 
   save <- readFile "save.txt"
-  let sJogo = read $ head $ lines save
-  let sScore = read $ lines save !! 1
-  let sMove = read $ last $ lines save
-  if null save then return (Jogar, jogo, score, images, Cima, 0) else return (Jogar, sJogo, sScore, images, sMove, 0)
+  let savedJogo = read $ head $ lines save
+  let savedScore = read $ lines save !! 1
+  let savedMove = read $ last $ lines save
+  if null save then return (Jogar, jogo, score, images, Cima, 0) else return (Jogar, savedJogo, savedScore, images, savedMove, 0)
 event (EventKey (SpecialKey KeyUp) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (MenuContinuarJogo, jogo, score, images, lastMove, tempo)
 event (EventKey (SpecialKey KeyDown) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (MenuCreditos, jogo, score, images, lastMove, tempo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (Controlos, jogo, score, images, lastMove, tempo)
@@ -152,7 +152,7 @@ event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, _ , _ , _, _, _) = er
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Controlos, jogo, score, images, lastMove, tempo) = return (MenuControlos, jogo, score, images, lastMove, tempo)
 event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score, images, lastMove, tempo) = return (MenuCreditos, jogo, score, images, lastMove, tempo)
 
--- Eventos no menu de pausa
+-- Eventos durante o jogo
 event (EventKey (Char 'p') Down _ _) (Jogar, jogo, score, images, lastMove, tempo) = return  (Pausa VoltarJogo, jogo, score, images, lastMove, tempo)
 event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll), score, images, lastMove, tempo) = case key of
   KeyUp -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll), score, images, Cima, tempo)
@@ -187,7 +187,7 @@ event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu JogarDeNovo, jogo, score
   let randList = take 7 $ randoms (mkStdGen n)
   let novoMapa = gerarMapa randList baseMapa 7
   return (MenuNovoJogo, Jogo (Jogador (4,8)) novoMapa, 0, images, Cima, 0)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair, _ , _ , _ , _, _) = do 
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair,_ , _ , _, _, _) = do 
   writeFile "save.txt" ""
   error "Fim de Jogo"
 event _ e = return e
@@ -196,11 +196,14 @@ event _ e = return e
 time :: Float -> Estado -> IO Estado
 time _ (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score, images, lastMove, tempo) | m /= Jogar = return (m,jogo, score, images, lastMove, tempo) 
                                                                                     | jogoTerminou jogo = return (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo)
-                                                                                    | otherwise = case tempo of 
-                                                                                        1 -> do 
-                                                                                            n <- randomRIO (0,100)
-                                                                                            return (m,deslizaJogo n (Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y))))), score+0.25, images, lastMove,0)              
-                                                                                        _ -> return (m, Jogo (Jogador (x,y)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score+0.25, images, lastMove,tempo+0.25)
+                                                                                    | otherwise = case tempo of
+                                                                                        32 -> return (m,jogo, score, images, lastMove,0) 
+                                                                                        30 -> do 
+                                                                                             n <- randomRIO (0,100)
+                                                                                             return (m,deslizaJogo n (Jogo (Jogador (x,y) ) (Mapa l ll)), score + 0.20, images, lastMove,tempo+1)
+                                                                                        _ | mod tempo 10 == 0-> do
+                                                                                             return (m, Jogo (Jogador (moveJogador (x,y) l ll Parado)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score + 0.20, images, lastMove,tempo+1)
+                                                                                        _ -> return (m,jogo, score, images, lastMove,tempo+1)
 
 -- | Função para correr o jogo.
 main :: IO ()
@@ -227,20 +230,21 @@ main = do
   carro3d <- loadJuicyPNG "img/carro3d.png"
   carro3e <- loadJuicyPNG "img/carro3e.png"
   arvore <- loadJuicyPNG "img/arvore.png"
-  tronco <- loadJuicyPNG "img/tronco.png"
+  troncoDireita <- loadJuicyPNG "img/troncoDireita.png"
+  troncoEsquerda <- loadJuicyPNG "img/troncoEsquerda.png"
   jogadorCima <- loadJuicyPNG "img/galinhaFrente.png"
   jogadorBaixo <- loadJuicyPNG "img/galinhaTras.png"
   jogadorEsquerda <- loadJuicyPNG "img/galinhaEsquerda.png"
   jogadorDireita <- loadJuicyPNG "img/galinhaDireita.png"
   scoreTxt <- loadJuicyPNG "img/scoreTxt.png"
   let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair, controlos, creditos, pausaVoltarJogo, pausaGuardarSair, pausaSair, 
-                             perdeuJogarDnv, perdeuSair, relva, rio, estrada, carro1d, carro1e, carro2d, carro2e, carro3d, carro3e, arvore, tronco, jogadorCima, jogadorBaixo, jogadorDireita, jogadorEsquerda, scoreTxt]
+                             perdeuJogarDnv, perdeuSair, relva, rio, estrada, carro1d, carro1e, carro2d, carro2e, carro3d, carro3e, arvore, troncoDireita, troncoEsquerda, jogadorCima, jogadorBaixo, jogadorDireita, jogadorEsquerda, scoreTxt]
   n <- randomRIO (0,100)
   let randList = take 7 $ randoms (mkStdGen n)
   let mapaInicial = gerarMapa randList baseMapa 7
   playIO mainDisplay
        (greyN 0.25)
-       2
+       20
        (estadoInicial mapaInicial images)
        drawState
        event 

@@ -36,7 +36,13 @@ type Score = Float
 type Estado = (ModoJogo, Jogo, Score, [Picture])
 
 mainDisplay :: Display
-mainDisplay = InWindow "Crossy Road" (640,1000) (0,0)
+mainDisplay = InWindow "Crossy Road" (700,700) (0,0)
+
+estrad :: Picture
+estrad = color yellow (Polygon [(0,0), (0,70), (700,70), (700,0)])
+
+cir :: Picture
+cir = circle 5
 
 main :: IO ()
 main = do
@@ -49,4 +55,4 @@ main = do
   relva <- loadJuicyPNG "img/galinhaFrente.png"
   estrada <- loadJuicyPNG "img/estrada.png"
   let images = map fromJust [menuNovoJogo, menuContinuarJogo, menuControlos, menuCreditos, menuSair, controlos, relva, estrada]  --onde se define a largura e o número de linhas que o mapa tem
-  display mainDisplay (greyN 0.5) (translate (0) (0) (Pictures ((images !! 6) : [circle 5])))
+  display mainDisplay (greyN 0.5)  (Pictures (translate (-350) (280) estrad : [cir]))
