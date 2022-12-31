@@ -42,13 +42,13 @@ data MenuPerdeu = JogarDeNovo | PerdeuSair
   deriving Eq
 
 -- | Pontuação do jogador.
-type Score = Float
+type Score = Int
 
 -- | Contador auxiliar de tempo.
 type Tempo = Int
 
--- | Estado do jogo para guardar informações: o modo de jogo, o jogo, a pontuação, a lista de imagens usadas, a direção do último movimento e o contador do tempo.
-type Estado = (ModoJogo, Jogo, Score, [Picture], Direcao, Tempo)
+-- | Estado do jogo para guardar informações: o modo de jogo, o jogo, a pontuação e a melhor pontuação do jogo, a lista de imagens usadas, a direção do último movimento, o contador do tempo e a melhor pontuação que o jogador já teve.
+type Estado = (ModoJogo, Jogo, Score, Score, [Picture], Direcao, Tempo, Score)
 
 -- | Função para gerar um mapa aleatório.
 gerarMapa :: [Int] -> Mapa -> Int -> Mapa
@@ -65,21 +65,21 @@ baseMapa = Mapa 8 [(Relva,[Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenhum,Nenh
 
 -- | Estado inicial do jogo.
 estadoInicial :: Mapa -> [Picture] -> Estado
-estadoInicial mapaInicial images = (MenuNovoJogo, Jogo (Jogador (4,9)) mapaInicial, 0, images, Cima, 0)
+estadoInicial mapaInicial images = (MenuNovoJogo, Jogo (Jogador (4,9)) mapaInicial, 0, 0, images, Cima, 0, 0)
 
 -- | Função para desenhar o jogo.
 drawState :: Estado -> IO Picture
-drawState (MenuNovoJogo, jogo, _, images, _, _) = return (head images)
-drawState (MenuContinuarJogo, jogo ,_, images, _, _) = return (images !! 1)
-drawState (MenuControlos, jogo, _, images, _ , _) = return (images !! 2)
-drawState (MenuCreditos, jogo, _, images, _, _) = return (images !! 3)
-drawState (MenuSair, jogo, _, images, _, _) = return (images !! 4)
-drawState (Controlos, jogo, _, images, _, _) = return (images !! 5)
-drawState (Creditos, jogo, _, images, _, _) = return (images !! 6)
-drawState (Pausa VoltarJogo, jogo, _, images, _, _) = return (images !! 7)
-drawState (Pausa GuardarSair, jogo, _, images, _, _) = return (images !! 8)
-drawState (Pausa SairPausa, jogo, _, images, _, _) = return (images !! 9)
-drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) = return $ Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ last images] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show (truncate score))])
+drawState (MenuNovoJogo, jogo, _, _, images, _, _, _) = return (head images)
+drawState (MenuContinuarJogo, jogo ,_, _, images, _, _, _) = return (images !! 1)
+drawState (MenuControlos, jogo, _, _, images, _ , _, _) = return (images !! 2)
+drawState (MenuCreditos, jogo, _, _, images, _, _, _) = return (images !! 3)
+drawState (MenuSair, jogo, _, _, images, _, _, _) = return (images !! 4)
+drawState (Controlos, jogo, _, _, images, _, _, _) = return (images !! 5)
+drawState (Creditos, jogo, _, _, images, _, _, _) = return (images !! 6)
+drawState (Pausa VoltarJogo, jogo, _, _, images, _, _, _) = return (images !! 7)
+drawState (Pausa GuardarSair, jogo, _, _,images, _, _, _) = return (images !! 8)
+drawState (Pausa SairPausa, jogo, _, _, images, _, _, _) = return (images !! 9)
+drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, topScore, images, lastMove, _, _) = return $ Pictures (drawLines (0,0) ll images ++ [Translate i j playerPic] ++ [Translate (-259) 485 $ last images] ++ [Color (makeColorI 117 28 25 1) $ Translate (-198) 473 $ Scale 0.24 0.22 $ Text (show score)])
   where i = fromIntegral (-280 + x*80)
         j = fromIntegral (450 - (y*100))
         playerPic = case lastMove of
@@ -87,8 +87,9 @@ drawState (Jogar, Jogo (Jogador (x,y)) (Mapa _ ll), score, images, lastMove, _) 
           Baixo -> images !! 25
           Direita -> images !! 26
           Esquerda -> images !! 27
-drawState (Perdeu JogarDeNovo, jogo, score, images, _, _) = return $ Pictures((images !! 10) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show (truncate score))])
-drawState (Perdeu PerdeuSair, jogo, score, images, _, _) = return $ Pictures((images !! 11) : [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show (truncate score))])
+drawState (Perdeu JogarDeNovo, jogo, score, topScore, images, _, _, bestScore) = return (if topScore > bestScore then Pictures((images !! 10) : Color yellow (Translate 8 93 $ Scale 0.39 0.3 $ Text (show topScore)): [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.3 $ Text (show topScore)]) else Pictures((images !! 10) : Color (makeColorI 117 28 25 1) (Translate 8 93 $ Scale 0.4 0.37 $ Text (show bestScore)): [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show topScore)]))
+drawState (Perdeu PerdeuSair, jogo, score, topScore, images, _, _, bestScore) = return (if topScore > bestScore then Pictures((images !! 11) : Color yellow (Translate 8 93 $ Scale 0.39 0.3 $ Text (show topScore)): [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.3 $ Text (show topScore)]) else Pictures((images !! 11) : Color (makeColorI 117 28 25 1) (Translate 8 93 $ Scale 0.4 0.37 $ Text (show bestScore)): [Color (makeColorI 117 28 25 1) $ Translate (-10) 138 $ Scale 0.5 0.45 $ Text (show topScore)]))
+
 
 -- | Função para desenhar cada linha linha do mapa.
 drawLines :: (Int, Int) -> [(Terreno,[Obstaculo])] -> [Picture] -> [Picture]
@@ -129,81 +130,93 @@ drawMiddle x v ((Carro:ns):os) images | length ns + 1 == 1 = if v > 0 then Trans
 -- | Função para reagir às teclas pressionadas pelo utilizador.
 event :: Event -> Estado -> IO Estado
 -- Eventos no menu inicial
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuNovoJogo, jogo, score, images, lastMove, tempo) = return (MenuSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuNovoJogo, jogo, score, images, lastMove, tempo) = return (MenuContinuarJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuNovoJogo, jogo, score, images, lastMove, tempo) = return (Jogar, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuContinuarJogo, jogo, score, images, lastMove, tempo) = return (MenuNovoJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, images, lastMove, tempo) = return (MenuControlos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score, images, _, _) = do 
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuNovoJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuNovoJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuContinuarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuNovoJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = do
+  pontuacao <- readFile "bestScore.txt"
+  let savedBestScore = read pontuacao
+  return (Jogar, jogo, score, topScore, images, lastMove, tempo, savedBestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuContinuarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuNovoJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuContinuarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuContinuarJogo, jogo, score, topScore, images, _, _, bestScore) = do
+  pontuacao <- readFile "bestScore.txt"
   save <- readFile "save.txt"
-  let savedJogo = read $ head $ lines save
+  let savedJogo = read $ head $ lines save 
   let savedScore = read $ lines save !! 1
+  let savedTopScore = read $ lines save !! 2
   let savedMove = read $ last $ lines save
-  if null save then return (Jogar, jogo, score, images, Cima, 0) else return (Jogar, savedJogo, savedScore, images, savedMove, 0)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (MenuContinuarJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (MenuCreditos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuControlos, jogo, score, images, lastMove, tempo) = return (Controlos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score, images, lastMove, tempo) = return (MenuControlos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuCreditos, jogo, score, images, lastMove, tempo) = return (MenuSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuCreditos, jogo, score, images, lastMove, tempo) = return (Creditos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo, score, images, lastMove, tempo) = return (MenuCreditos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score, images, lastMove, tempo) = return (MenuNovoJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, _ , _ , _, _, _) = error "Fim de Jogo"
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Controlos, jogo, score, images, lastMove, tempo) = return (MenuControlos, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score, images, lastMove, tempo) = return (MenuCreditos, jogo, score, images, lastMove, tempo)
+  let savedBestScore = read pontuacao
+  if null save then return (Jogar, jogo, score, topScore, images, Cima, 0, savedBestScore) else return (Jogar, savedJogo, savedScore, savedTopScore, images, savedMove, 0, savedBestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuContinuarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Controlos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Creditos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (MenuSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (MenuSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuNovoJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (MenuSair, _ , _ , _, _, _, _, _) = error "Fim de Jogo"
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Controlos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuControlos, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Creditos, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (MenuCreditos, jogo, score, topScore, images, lastMove, tempo, bestScore)
 
 -- Eventos durante o jogo
-event (EventKey (Char 'p') Down _ _) (Jogar, jogo, score, images, lastMove, tempo) = return  (Pausa VoltarJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador c) (Mapa l ll), score, images, lastMove, tempo) = case key of
-  KeyUp -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Cima))) (Mapa l ll), score, images, Cima, tempo)
-  KeyDown -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Baixo))) (Mapa l ll), score, images, Baixo, tempo)
-  KeyRight -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Direita))) (Mapa l ll), score, images, Direita, tempo)
-  KeyLeft -> return (Jogar, Jogo (Jogador (moveJogador c l ll (Move Esquerda))) (Mapa l ll), score, images, Esquerda, tempo)
-  _ -> return (Jogar, Jogo (Jogador c) (Mapa l ll), score, images, lastMove, tempo) 
+event (EventKey (Char 'p') Down _ _) (Jogar, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey key) Down _ _) (Jogar, Jogo (Jogador (x,y)) (Mapa l ll), score, topScore, images, lastMove, tempo, bestScore) = case key of
+  KeyUp -> if yUp /= y then return (Jogar, Jogo (Jogador (xUp, yUp)) (Mapa l ll), score + 1, max (score + 1) topScore, images, Cima, tempo, bestScore) else return (Jogar, Jogo (Jogador (xUp, yUp)) (Mapa l ll), score, topScore, images, Cima, tempo, bestScore)
+  KeyDown -> if yDown /= y then return (Jogar, Jogo (Jogador (xDown, yDown)) (Mapa l ll), score - 1, topScore, images, Baixo, tempo, bestScore) else return (Jogar, Jogo (Jogador (xDown, yDown)) (Mapa l ll), score, topScore, images, Baixo, tempo, bestScore)
+  KeyRight -> return (Jogar, Jogo (Jogador (moveJogador (x,y) l ll (Move Direita))) (Mapa l ll), score, topScore, images, Direita, tempo, bestScore)
+  KeyLeft -> return (Jogar, Jogo (Jogador (moveJogador (x,y) l ll (Move Esquerda))) (Mapa l ll), score, topScore, images, Esquerda, tempo, bestScore)
+  _ -> return (Jogar, Jogo (Jogador (x,y)) (Mapa l ll), score, topScore, images, lastMove, tempo, bestScore)
+  where (xUp, yUp) = moveJogador (x,y) l ll (Move Cima)
+        (xDown, yDown) = moveJogador (x,y) l ll (Move Baixo)
 
 -- Eventos no menu de pausa
-event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo, score, images, lastMove, tempo) = return (Pausa SairPausa, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa VoltarJogo, jogo, score, images, lastMove, tempo) = return (Pausa GuardarSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa GuardarSair, jogo, score, images, lastMove, tempo) = return (Pausa VoltarJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa GuardarSair, jogo, score, images, lastMove, tempo) = return (Pausa SairPausa, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa SairPausa, jogo, score, images, lastMove, tempo) = return (Pausa GuardarSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa SairPausa, jogo, score, images, lastMove, tempo) = return (Pausa VoltarJogo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo, score, images, lastMove, _) = return (Jogar, jogo, score, images, lastMove, 0)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa GuardarSair, jogo, score, _, lastMove, _) = do
-  writeFile "save.txt" (show jogo ++ "\n" ++ show score ++ "\n" ++ show lastMove)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa SairPausa, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa GuardarSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa GuardarSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa GuardarSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa SairPausa, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Pausa SairPausa, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa GuardarSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Pausa SairPausa, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa VoltarJogo, jogo, score, topScore, images, lastMove, _, bestScore) = return (Jogar, jogo, score, topScore, images, lastMove, 0, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa GuardarSair, jogo, score, topScore, _, lastMove, _, bestScore) = do
+  writeFile "save.txt" (show jogo ++ "\n" ++ show score ++ "\n" ++ show topScore ++ "\n"++ show lastMove)
+  writeFile "bestScore.txt" (show (max bestScore topScore))
   error "Fim de Jogo"
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, _ , _ , _, _, _) = do
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Pausa SairPausa, _ , topScore , _, _, _, _, bestScore) = do
   writeFile "save.txt" ""
+  writeFile "bestScore.txt" (show bestScore)
   error "Fim de Jogo"
-event (EventKey (Char 'p') Down _ _) (Pausa _, jogo, score, images, lastMove, _) = return (Jogar, jogo, score, images, lastMove, 0)
+event (EventKey (Char 'p') Down _ _) (Pausa _, jogo, score, topScore, images, lastMove, _, bestScore) = return (Jogar, jogo, score, topScore, images, lastMove, 0, bestScore)
 
 -- Eventos no menu de fim de jogo
-event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo) = return (Perdeu PerdeuSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo) = return (Perdeu PerdeuSair, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu PerdeuSair, jogo, score, images, lastMove, tempo) = return (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu PerdeuSair, jogo, score, images, lastMove, tempo) = return (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu JogarDeNovo, jogo, score, images, _, _) = do
+event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu JogarDeNovo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Perdeu PerdeuSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu JogarDeNovo, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Perdeu PerdeuSair, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyUp) Down _ _) (Perdeu PerdeuSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Perdeu JogarDeNovo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyDown) Down _ _) (Perdeu PerdeuSair, jogo, score, topScore, images, lastMove, tempo, bestScore) = return (Perdeu JogarDeNovo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu JogarDeNovo, jogo, score, topScore, images, _, _, bestScore) = do
+  writeFile "bestScore.txt" (show (max bestScore topScore))
   n <- randomRIO (0,100)
   let randList = take 7 $ randoms (mkStdGen n)
   let novoMapa = gerarMapa randList baseMapa 7
-  return (MenuNovoJogo, Jogo (Jogador (4,8)) novoMapa, 0, images, Cima, 0)
-event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair,_ , _ , _, _, _) = do 
-  writeFile "save.txt" ""
+  return (MenuNovoJogo, Jogo (Jogador (4,8)) novoMapa, 0, 0, images, Cima, 0, bestScore)
+event (EventKey (SpecialKey KeyEnter) Down _ _) (Perdeu PerdeuSair,_ , _ , topScore, _, _, _, bestScore) = do 
+  writeFile "save.txt" (show (max bestScore topScore))
+  writeFile "bestScore.txt" (show (max bestScore topScore))
   error "Fim de Jogo"
 event _ e = return e
 
 -- | Função que define a passagem do tempo no jogo e que executa algo à medida que o tempo passa.
 time :: Float -> Estado -> IO Estado
-time _ (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score, images, lastMove, tempo) | m /= Jogar = return (m,jogo, score, images, lastMove, tempo) 
-                                                                                    | jogoTerminou jogo = return (Perdeu JogarDeNovo, jogo, score, images, lastMove, tempo)
-                                                                                    | otherwise = case tempo of
-                                                                                        32 -> return (m,jogo, score, images, lastMove,0) 
-                                                                                        30 -> do 
-                                                                                             n <- randomRIO (0,100)
-                                                                                             return (m,deslizaJogo n (Jogo (Jogador (x,y) ) (Mapa l ll)), score + 0.20, images, lastMove,tempo+1)
-                                                                                        _ | mod tempo 10 == 0-> do
-                                                                                             return (m, Jogo (Jogador (moveJogador (x,y) l ll Parado)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score + 0.20, images, lastMove,tempo+1)
-                                                                                        _ -> return (m,jogo, score, images, lastMove,tempo+1)
+time _ (m, jogo@(Jogo (Jogador (x,y)) (Mapa l ll)), score, topScore, images, lastMove, tempo, bestScore) | m /= Jogar = return (m,jogo, score, topScore, images, lastMove, tempo, bestScore) 
+                                                                                                         | jogoTerminou jogo = return (Perdeu JogarDeNovo, jogo, score, topScore, images, lastMove, tempo, bestScore)
+                                                                                                         | otherwise = case tempo of
+                                                                                                              32 -> return (m,jogo, score, topScore, images, lastMove,0, bestScore) 
+                                                                                                              30 -> do 
+                                                                                                                    n <- randomRIO (0,100)
+                                                                                                                    return (m,deslizaJogo n (Jogo (Jogador (x,y) ) (Mapa l ll)), score, topScore, images, lastMove,tempo+1, bestScore)
+                                                                                                              _ | mod tempo 10 == 0-> do
+                                                                                                                    return (m, Jogo (Jogador (moveJogador (x,y) l ll Parado)) (Mapa l (moveObstaculos ll (maxCasas (ll !! y) (x,y)))), score, topScore, images, lastMove,tempo+1, bestScore)
+                                                                                                              _ -> return (m,jogo, score, topScore, images, lastMove,tempo+1, bestScore)
 
 -- | Função para correr o jogo.
 main :: IO ()
