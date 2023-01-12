@@ -1,30 +1,71 @@
 module Ficha8 where
+import Data.List
+import Data.Char
+
 --1)tipo de dados para representar frações
 data Frac = F Integer Integer
 
 --a)fração que dada uma fração, calcula uma equivalente, irredutível e com o denominador positivo
---normaliza :: Frac -> Frac
+normaliza :: Frac -> Frac
+normaliza (F a b)
+    | b < 0 = normaliza $ F (-a) (-b)
+    | otherwise = 
+        let d = mdc a b in
+        F (a `div` d) (b `div` d)
 
---mdc :: Integer -> Integer -> Integer
+mdc :: Integer -> Integer -> Integer
+mdc x 0 = x
+mdc 0 y = y
+mdc x y = mdc y (x `mod` y)
 
 --b)definir Frac como instância da classe Eq
 instance Eq Frac where
---    f1 == f2 = (a==x) && (b == y)
---        where (F a b) = normaliza f1
---              (F x y) = normaliza f2
+    (==) :: Frac -> Frac -> Bool
+    f1 == f2 = a1 == a2 && b1 == b2
+        where F a1 b1 = normaliza f1
+              F a2 b2 = normaliza f2
 
 --c)definir Frac como instância da classe Ord
+instance Ord Frac where
+    (<=) :: Frac -> Frac -> Bool
+    f1 <= f2 = a1 * b2 <= a2 * b1
+        where F a1 b1 = normaliza f1
+              F a2 b2 = normaliza f2
 
 --d)definir Frac como instância da classe Show, de forma a ser apresentada por (num/denom)
-instance Show Frac where 
+instance Show Frac where
     show :: Frac -> String
-    show (F a b) = "(" ++ (show a) ++ "/" ++ (show b)
+    show f = show a ++ "/" ++ show b
+        where F a b = normaliza f
+
 --e)definir Frac como instância da classe Num
 instance Num Frac where
-    (F a b) + (F x y) = F (a*y + b*x) (b*y)
-    (F a b) * (F x y) = F (a*x) (b*y)
-    negate (F a b) = F (-a) b
-    abs (F a b) = F (abs a) (abs b)
+    (+) :: Frac -> Frac -> Frac
+    (F a b) + (F c d) = normaliza $ F (a * d + b * c) (b * d)
+    
+    (-) :: Frac -> Frac -> Frac
+    x - y = x + negate y
+
+    (*) :: Frac -> Frac -> Frac
+    (F a b) * (F c d) = normaliza $ F (a * c) (b * d)
+    
+    negate :: Frac -> Frac
+    negate (F a b) = normaliza $ F (-a) b
+    
+    abs :: Frac -> Frac
+    abs f = F (abs a) b
+        where F a b = normaliza f
+    
+    signum :: Frac -> Frac
+    signum f = F (signum a) 1
+        where F a b = normaliza f
+    
+    fromInteger :: Integer -> Frac
+    fromInteger x = F x 1
+
+--f)Função que, dada uma fração f e uma lista de frações l, selecciona de l os elementos que são maiores do que o dobro de f
+maioresQueDobro :: Frac -> [Frac] -> [Frac]
+maioresQueDobro = filter . (<) . (2 *)
 
 --2)tipo de dados para representar expressoes inteiras
 data Exp a = Const a
@@ -101,13 +142,25 @@ instance (Ord a, Num a) => Ord (Exp a) where
 --3)tipo de dadoos para representar um extrato bancário
 data Movimento = Credito Float | Debito Float
 data Data = D Int Int Int
+    deriving Eq
 data Extracto = Ext Float [(Data, String, Movimento)]
 
 --a)Definir Data como instância da classe Ord
+instance Ord Data where
+    compare :: Data -> Data -> Ordering
+    compare (D dia1 mes1 ano1) (D dia2 mes2 ano2) 
+        | ano1 > ano2 || ano1 == ano2 && (mes1 > mes2 || mes1 == mes2 && dia1 > dia2) = GT
+        | ano1 == ano2 && mes1 == mes2 && dia1 == dia2 = EQ
+        | otherwise = LT
 
 --b)Definir Data como instância da classe Show
+instance Show Data where 
+    show :: Data -> String
+    show (D dia mes ano) = intercalate "/" $ map show [ano,mes,dia]
 
 --c)função que transforma um extrato que modo a que a lista de movimentos apareça pro ordem crescente de data
+ordena :: Extracto -> Extracto
+ordena (Ext n l) = Ext n (sortBy (\(data1,_,_) (data2,_,_) -> compare data1 data2) l)
 
 --d)Definir Extracto como instância da classe Show, de forma a que a apresentação do extrato seja por ordem de data do movimento com o seguinte e com o aspeto:
 {-
@@ -123,3 +176,25 @@ Data Descricao Credito Debito
 ---------------------------------------
 Saldo actual: 2294,5
 -}
+instance Show Extracto where
+    show :: Extracto -> String
+    show ext = "Saldo anterior: " ++ show n ++
+               "\n---------------------------------------" ++
+               "\nData       Descricao" ++ replicate (desc_max - 9) ' ' ++ "Credito" ++ replicate (cred_max - 7) ' ' ++ "Debito" ++
+               "\n---------------------------------------\n" ++
+               unlines (map (\(dat,desc,mov) -> 
+                    show dat ++ replicate (data_max - length (show dat)) ' ' 
+                    ++ map toUpper desc ++ replicate (desc_max - length desc) ' ' 
+                    ++ case mov of Credito quant -> show quant ++ replicate (cred_max - length (show quant)) ' '; Debito _ -> replicate cred_max ' '
+                    ++ case mov of Debito quant -> show quant; Credito _ -> ""
+               ) movs) ++
+               "---------------------------------------" ++
+               "\nSaldo actual: " ++ show (saldo ext)
+        where (Ext n movs) = ordena ext
+              data_max = 11
+              desc_max = max (length "Descricao   ") (maximum $ map (\(_,desc,_) -> length desc) movs)
+              cred_max = max (length "Credito   ") (maximum $ map (\(_,_,mov) -> case mov of Credito x -> length (show x); _ -> 0) movs)
+
+saldo :: Extracto -> Float
+saldo (Ext x lm) = foldl (\acc (_,_,mov) -> case mov of Credito n -> acc + n
+                                                        Debito n -> acc - n) x lm

@@ -3,7 +3,13 @@ module Ficha6 where
 --1) tipo para representar árvores binárias
 data BTree a = Empty
              | Node a (BTree a) (BTree a)
-             deriving Show
+
+instance Show a => Show (BTree a) where
+    show :: Show a =>BTree a -> String
+    show Empty = "*"
+    show (Node e l r) = "(" ++ show l ++ " <-" ++ show e ++ "-> " ++ show r ++ ")"
+
+a1 = Node 5 (Node 3 Empty Empty) (Node 7 Empty (Node 9 Empty Empty))
 --ex
 a ::BTree Int
 a = Node 5 (Node 3 (Empty) (Node 2 (Empty) (Empty))) (Node 4 (Empty) (Empty))
@@ -140,3 +146,18 @@ sumNotas (Node (_,_,_,Aprov n) e d) = fromIntegral n + sumNotas e + sumNotas d
 sumNotas (Node x e d) = sumNotas e + sumNotas d
 
 --g)função que calcula o rácio de alunos aprovados por avaliados. Apenas uma travessia da árvore
+
+remove :: Ord a => a -> BTree a -> BTree a
+remove _ Empty = Empty
+remove x (Node a l r)
+    | x > a = Node a l (remove x r)
+    | x < a = Node a (remove x l) r
+    | otherwise = 
+        case (l,r) of 
+            (Empty, r) -> r
+            (l, Empty) -> l
+            (l, r) -> let (min, sMin) = minSMin r in Node min l sMin
+
+minSMin :: BTree a -> (a, BTree a)
+minSMin (Node e Empty r) = (e, r)
+minSMin (Node e l r) = let (min, sMin) = minSMin l in (min, Node e sMin r)

@@ -340,7 +340,7 @@ minutos (PM h m) = 60*(h+12) + m
 minutos (Total h m) = 60*h + m
 
 instance Eq Time where
---t1 == t2 = (minutos t1) == (minutos t2)
+ t1 == t2 = minutos t1 == minutos t2
 
 --Monads e monad IO
 --funções e tipos não puros que envolvem interações
